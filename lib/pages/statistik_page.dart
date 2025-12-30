@@ -47,30 +47,30 @@ class _StatistikPageState extends State<StatistikPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData.light(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Statistik Data Jenazah'),
-          backgroundColor: const Color(0xFF7C4DFF),
-          foregroundColor: Colors.white,
-        ),
-        body: RefreshIndicator(
-          onRefresh: _loadStatistik,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSummaryCard(),
-              const SizedBox(height: 24),
-              _buildGenderChart(),
-              const SizedBox(height: 24),
-              _buildDailyChart(),
-            ],
-          ),
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Statistik Data Jenazah'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadStatistik,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildSummaryCard(),
+            const SizedBox(height: 24),
+            _buildGenderChart(),
+            const SizedBox(height: 24),
+            _buildDailyChart(),
+          ],
         ),
       ),
     );
   }
+
+  // ================= SUMMARY =================
 
   Widget _buildSummaryCard() {
     return Row(
@@ -78,7 +78,7 @@ class _StatistikPageState extends State<StatistikPage> {
         _buildInfoBox(
           title: 'Total Data',
           value: totalData.toString(),
-          color: const Color(0xFF7C4DFF),
+          color: Colors.deepPurple,
           icon: Icons.storage,
         ),
         const SizedBox(width: 12),
@@ -105,15 +105,20 @@ class _StatistikPageState extends State<StatistikPage> {
     required Color color,
     required IconData icon,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.15),
+              color: Colors.black.withOpacity(
+                theme.brightness == Brightness.dark ? 0.4 : 0.15,
+              ),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -136,7 +141,7 @@ class _StatistikPageState extends State<StatistikPage> {
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ],
@@ -145,7 +150,11 @@ class _StatistikPageState extends State<StatistikPage> {
     );
   }
 
+  // ================= PIE CHART =================
+
   Widget _buildGenderChart() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return _buildCard(
       title: 'Komposisi Jenazah',
       child: SizedBox(
@@ -157,7 +166,7 @@ class _StatistikPageState extends State<StatistikPage> {
             sections: [
               PieChartSectionData(
                 value: totalLaki.toDouble(),
-                title: 'Laki-laki',
+                title: 'Laki',
                 color: Colors.blue,
                 radius: 60,
                 titleStyle: const TextStyle(
@@ -182,7 +191,12 @@ class _StatistikPageState extends State<StatistikPage> {
     );
   }
 
+  // ================= BAR CHART =================
+
   Widget _buildDailyChart() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return _buildCard(
       title: 'Data Per Entri',
       child: SizedBox(
@@ -199,7 +213,7 @@ class _StatistikPageState extends State<StatistikPage> {
                   barRods: [
                     BarChartRodData(
                       toY: (j.jumlahLaki + j.jumlahPerempuan).toDouble(),
-                      color: const Color(0xFF7C4DFF),
+                      color: colorScheme.primary,
                       width: 18,
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -209,7 +223,18 @@ class _StatistikPageState extends State<StatistikPage> {
             ),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: true),
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toInt().toString(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colorScheme.onSurface,
+                      ),
+                    );
+                  },
+                ),
               ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
@@ -217,13 +242,23 @@ class _StatistikPageState extends State<StatistikPage> {
                   getTitlesWidget: (value, meta) {
                     return Text(
                       'D${value.toInt() + 1}',
-                      style: const TextStyle(fontSize: 10),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colorScheme.onSurface,
+                      ),
                     );
                   },
                 ),
               ),
             ),
-            gridData: FlGridData(show: true),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (value) => FlLine(
+                color: colorScheme.onSurface.withOpacity(0.15),
+                strokeWidth: 1,
+              ),
+            ),
             borderData: FlBorderData(show: false),
           ),
         ),
@@ -231,18 +266,25 @@ class _StatistikPageState extends State<StatistikPage> {
     );
   }
 
+  // ================= CARD WRAPPER =================
+
   Widget _buildCard({
     required String title,
     required Widget child,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.black.withOpacity(
+              theme.brightness == Brightness.dark ? 0.4 : 0.1,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -253,9 +295,10 @@ class _StatistikPageState extends State<StatistikPage> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),

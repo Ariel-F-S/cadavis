@@ -30,11 +30,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Data Jenazah'),
-        backgroundColor: const Color(0xFF7C4DFF),
-        foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Jenazah>>(
         future: _riwayatFuture,
@@ -44,10 +45,12 @@ class _RiwayatPageState extends State<RiwayatPage> {
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'Belum ada data tersimpan',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: colorScheme.onSurface.withOpacity(0.6),
+                ),
               ),
             );
           }
@@ -63,11 +66,13 @@ class _RiwayatPageState extends State<RiwayatPage> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.black.withOpacity(
+                        theme.brightness == Brightness.dark ? 0.4 : 0.1,
+                      ),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -105,7 +110,10 @@ class _RiwayatPageState extends State<RiwayatPage> {
                             Icons.location_on,
                             item.lokasiPenemuan,
                           ),
-                          const Divider(height: 24),
+                          Divider(
+                            height: 24,
+                            color: colorScheme.onSurface.withOpacity(0.2),
+                          ),
 
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -130,7 +138,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                             'Petugas: ${item.namaPetugas}',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[700],
+                              color: colorScheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -146,20 +154,29 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
+  // ================= ROW INFO =================
+
   Widget _rowInfo(IconData icon, String text) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF7C4DFF)),
+        Icon(icon, size: 16, color: colorScheme.primary),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
       ],
     );
   }
+
+  // ================= CHIP =================
 
   Widget _jumlahChip(
     IconData icon,
@@ -167,10 +184,21 @@ class _RiwayatPageState extends State<RiwayatPage> {
     int jumlah,
     Color color,
   ) {
+    final theme = Theme.of(context);
+
     return Chip(
       avatar: Icon(icon, color: color, size: 18),
-      label: Text('$label: $jumlah'),
-      backgroundColor: color.withOpacity(0.1),
+      label: Text(
+        '$label: $jumlah',
+        style: TextStyle(
+          color: theme.brightness == Brightness.dark
+              ? Colors.white
+              : Colors.black,
+        ),
+      ),
+      backgroundColor: color.withOpacity(
+        theme.brightness == Brightness.dark ? 0.25 : 0.12,
+      ),
     );
   }
 }
