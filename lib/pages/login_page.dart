@@ -18,7 +18,19 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _pass = TextEditingController();
   bool _showPassword = false;
 
-  void _login() {
+  // validasi login
+  void login() {
+    if (_user.text.trim().isEmpty || _pass.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username dan Password wajib diisi'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
         context,
@@ -62,9 +74,7 @@ class _LoginPageState extends State<LoginPage> {
               'assets/logo_cadavis.jpg',
               height: 120,
             ),
-
             const SizedBox(height: 24),
-
             TextField(
               controller: _user,
               decoration: const InputDecoration(
@@ -72,9 +82,7 @@ class _LoginPageState extends State<LoginPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: _pass,
               obscureText: !_showPassword,
@@ -95,13 +103,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _login,
+                onPressed: login, // ✅ BENAR
                 child: const Text('LOGIN'),
               ),
             ),
