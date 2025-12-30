@@ -18,6 +18,10 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _pass = TextEditingController();
   bool _showPassword = false;
 
+<<<<<<< HEAD
+  void login() {
+    // validasi login
+=======
   void _login() {
     if (_user.text.trim().isEmpty || _pass.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+>>>>>>> cb51db46239f0d199c97c3f2489cd54c8a47ba7f
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
         context,
@@ -94,6 +99,10 @@ class _LoginPageState extends State<LoginPage> {
                         ? Icons.visibility
                         : Icons.visibility_off,
                   ),
+<<<<<<< HEAD
+                  onPressed: () => setState(() => _show = !_show),
+=======
+>>>>>>> cb51db46239f0d199c97c3f2489cd54c8a47ba7f
                   onPressed: () {
                     setState(() {
                       _showPassword = !_showPassword;
