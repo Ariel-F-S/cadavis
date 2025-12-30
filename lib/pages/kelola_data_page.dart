@@ -118,7 +118,6 @@ class _KelolaDataPageState extends State<KelolaDataPage> {
     );
   }
 
-  // ================= EDIT =================
   void _showEditModal(Jenazah data) {
     final lokasiCtrl = TextEditingController(text: data.lokasiPenemuan);
     File? newImage;
@@ -186,7 +185,6 @@ class _KelolaDataPageState extends State<KelolaDataPage> {
     );
   }
 
-  // ================= DELETE =================
   void _confirmDelete(Jenazah data) {
     showDialog(
       context: context,
