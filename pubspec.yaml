@@ -1,0 +1,49 @@
+name: cadavis
+description: "Cadaver Detection System"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # DATABASE
+  sqflite: ^2.3.0
+  path: ^1.9.0
+
+  # EXPORT EXCEL
+  excel: ^4.0.3
+  path_provider: ^2.1.4
+  permission_handler: ^11.3.1
+  open_file: ^3.3.2
+
+  # LOGIN
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+  # ICON APK (WAJIB DI DEV DEPENDENCIES)
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo_cadavis.jpg
+    - assets/images.jpg
+
+# ⚠️ INI HARUS DI LUAR (ROOT), BUKAN DI FLUTTER
+flutter_icons:
+  android: true
+  ios: true
+  image_path: assets/logo_cadavis.jpg
