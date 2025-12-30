@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final Function(bool) onThemeChanged;
+
+  const LoginPage({super.key, required this.onThemeChanged});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -17,9 +19,24 @@ class _LoginPageState extends State<LoginPage> {
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
+        MaterialPageRoute(
+          builder: (_) => DashboardPage(
+            onThemeChanged: widget.onThemeChanged,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username atau Password salah')),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _user.dispose();
+    _pass.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,14 +61,19 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(
                 labelText: 'Password',
                 suffixIcon: IconButton(
-                  icon: Icon(_show ? Icons.visibility : Icons.visibility_off),
+                  icon: Icon(
+                    _show ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () => setState(() => _show = !_show),
                 ),
               ),
             ),
 
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _login, child: const Text('LOGIN')),
+            ElevatedButton(
+              onPressed: _login,
+              child: const Text('LOGIN'),
+            ),
           ],
         ),
       ),
