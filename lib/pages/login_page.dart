@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final Function(bool) onThemeChanged;
+
+  const LoginPage({super.key, required this.onThemeChanged});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -18,7 +20,15 @@ class _LoginPageState extends State<LoginPage> {
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardPage()),
+        MaterialPageRoute(
+          builder: (_) => DashboardPage(
+            onThemeChanged: widget.onThemeChanged,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username atau Password salah')),
       );
     } else {
       // PESAN ERROR
@@ -34,6 +44,13 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _user.dispose();
+    _pass.dispose();
+    super.dispose();
   }
 
   @override
@@ -71,15 +88,25 @@ class _LoginPageState extends State<LoginPage> {
                   icon: Icon(
                     _show ? Icons.visibility : Icons.visibility_off,
                   ),
+<<<<<<< HEAD
+                  onPressed: () => setState(() => _show = !_show),
+=======
                   onPressed: () {
                     setState(() {
                       _show = !_show;
                     });
                   },
+>>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
                 ),
               ),
             ),
 
+<<<<<<< HEAD
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _login,
+              child: const Text('LOGIN'),
+=======
             const SizedBox(height: 24),
 
             SizedBox(
@@ -96,6 +123,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(fontSize: 16),
                 ),
               ),
+>>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
             ),
           ],
         ),

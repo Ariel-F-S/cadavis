@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../helpers/theme_helper.dart';
+import 'input_page.dart';
+import 'laporan_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final Function(bool) onThemeChanged;
+  
+  const DashboardPage({super.key, required this.onThemeChanged});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -10,11 +15,13 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   String _namaPetugas = '';
+  bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadTheme();
   }
 
   Future<void> _loadUserData() async {
@@ -24,7 +31,13 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  // Fungsi untuk mendapatkan sapaan berdasarkan waktu
+  Future<void> _loadTheme() async {
+    final isDark = await ThemeHelper.loadThemeMode();
+    setState(() {
+      _isDarkMode = isDark;
+    });
+  }
+
   String _getSapaan() {
     final hour = DateTime.now().hour;
     if (hour < 11) {
@@ -40,7 +53,42 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          // Toggle Dark Mode
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.light_mode,
+                  size: 20,
+                  color: _isDarkMode ? Colors.grey : Colors.amber,
+                ),
+                Switch(
+                  value: _isDarkMode,
+                  onChanged: (value) {
+                    setState(() {
+                      _isDarkMode = value;
+                    });
+                    widget.onThemeChanged(value);
+                  },
+                  activeColor: const Color(0xFF7C4DFF),
+                ),
+                Icon(
+                  Icons.dark_mode,
+                  size: 20,
+                  color: _isDarkMode ? Colors.purple : Colors.grey,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -52,8 +100,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7C4DFF), Color(0xFF9C7FFF)],
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [const Color(0xFF9C7FFF), const Color(0xFF7C4DFF)]
+                          : [const Color(0xFF7C4DFF), const Color(0xFF9C7FFF)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -120,7 +170,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Jenazah',
                       color: const Color(0xFF7C4DFF),
                       onTap: () {
-                        Navigator.pushNamed(context, '/input');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => InputJenazahPage()),
+                        );
                       },
                     ),
                     _buildMenuCard(
@@ -129,7 +182,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Laporan',
                       color: const Color(0xFF00BFA5),
                       onTap: () {
-                        Navigator.pushNamed(context, '/laporan');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => LaporanPage()),
+                        );
                       },
                     ),
                     _buildMenuCard(
@@ -138,7 +194,15 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Grafik',
                       color: const Color(0xFFFF6D00),
                       onTap: () {
+<<<<<<< HEAD
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fitur Statistik (Coming Soon)'),
+                          ),
+                        );
+=======
                         Navigator.pushNamed(context, '/statistik');
+>>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
                       },
                     ),
                     _buildMenuCard(
@@ -147,7 +211,11 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Data',
                       color: const Color(0xFF0091EA),
                       onTap: () {
-                        Navigator.pushNamed(context, '/riwayat');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fitur Riwayat (Coming Soon)'),
+                          ),
+                        );
                       },
                     ),
                   ],
@@ -167,7 +235,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   title: 'Cari Data',
                   subtitle: 'Cari berdasarkan nama atau lokasi',
                   onTap: () {
-                    // TODO: Navigasi ke halaman pencarian
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Fitur Pencarian (Coming Soon)'),
@@ -227,16 +294,18 @@ class _DashboardPageState extends State<DashboardPage> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(isDark ? 0.05 : 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -277,18 +346,23 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final iconColor = color ?? const Color(0xFF7C4DFF);
+<<<<<<< HEAD
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+=======
 
+>>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(isDark ? 0.05 : 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -376,7 +450,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implementasi backup semua data
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Fitur Backup (Coming Soon)'),
@@ -411,7 +484,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implementasi hapus data lama
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Fitur Hapus Data Lama (Coming Soon)'),
