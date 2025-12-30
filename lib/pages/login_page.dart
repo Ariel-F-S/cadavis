@@ -4,19 +4,32 @@ import 'dashboard_page.dart';
 class LoginPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
 
-  const LoginPage({super.key, required this.onThemeChanged});
+  const LoginPage({
+    super.key,
+    required this.onThemeChanged,
+  });
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _user = TextEditingController();
-  final _pass = TextEditingController();
-  bool _show = false;
+  final TextEditingController _user = TextEditingController();
+  final TextEditingController _pass = TextEditingController();
+  bool _showPassword = false;
 
   void _login() {
-    // validasi login
+    if (_user.text.trim().isEmpty || _pass.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username dan Password wajib diisi'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
         context,
@@ -28,14 +41,9 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username atau Password salah')),
-      );
-    } else {
-      // PESAN ERROR
-      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Username dan password tidak sesuai',
+            'Username atau Password salah',
             style: TextStyle(fontWeight: FontWeight.w500),
           ),
           backgroundColor: Colors.red,
@@ -65,9 +73,7 @@ class _LoginPageState extends State<LoginPage> {
               'assets/logo_cadavis.jpg',
               height: 120,
             ),
-
             const SizedBox(height: 24),
-
             TextField(
               controller: _user,
               decoration: const InputDecoration(
@@ -75,39 +81,38 @@ class _LoginPageState extends State<LoginPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: _pass,
-              obscureText: !_show,
+              obscureText: !_showPassword,
               decoration: InputDecoration(
                 labelText: 'Password',
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _show ? Icons.visibility : Icons.visibility_off,
+                    _showPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
-                  onPressed: () => setState(() => _show = !_show),
+                  onPressed: () {
+                    setState(() {
+                      _showPassword = !_showPassword;
+                    });
+                  },
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('LOGIN'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _login,
+                child: const Text('LOGIN'),
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _user.dispose();
-    _pass.dispose();
-    super.dispose();
   }
 }
