@@ -59,7 +59,7 @@ class _CadavisAppState extends State<CadavisApp> {
 
         '/statistik': (context) => const StatistikPage(),
 
-        '/riwayat': (context) => const RiwayatPage(), // ✅ ROUTE RIWAYAT
+        '/riwayat': (context) => const RiwayatPage(),
       },
     );
   }
