@@ -6,6 +6,7 @@ class Jenazah {
   final int jumlahLaki;
   final int jumlahPerempuan;
   final String lokasiPenemuan;
+  final String? gambarPath;
 
   Jenazah({
     this.id,
@@ -15,6 +16,7 @@ class Jenazah {
     required this.jumlahLaki,
     required this.jumlahPerempuan,
     required this.lokasiPenemuan,
+    this.gambarPath,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +28,7 @@ class Jenazah {
       'jumlah_laki': jumlahLaki,
       'jumlah_perempuan': jumlahPerempuan,
       'lokasi_penemuan': lokasiPenemuan,
+      'gambar_path': gambarPath, 
     };
   }
 
@@ -38,6 +41,7 @@ class Jenazah {
       jumlahLaki: map['jumlah_laki'],
       jumlahPerempuan: map['jumlah_perempuan'],
       lokasiPenemuan: map['lokasi_penemuan'],
+      gambarPath: map['gambar_path'], 
     );
   }
 }

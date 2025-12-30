@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3, 
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE jenazah (
@@ -29,9 +29,15 @@ class DatabaseHelper {
             waktu_penemuan TEXT,
             jumlah_laki INTEGER,
             jumlah_perempuan INTEGER,
-            lokasi_penemuan TEXT
+            lokasi_penemuan TEXT,
+            gambar_path TEXT
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 3) {
+          await db.execute('ALTER TABLE jenazah ADD COLUMN gambar_path TEXT');
+        }
       },
     );
   }
