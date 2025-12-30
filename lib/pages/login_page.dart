@@ -15,7 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final _pass = TextEditingController();
   bool _show = false;
 
-  void _login() {
+  void login() {
     // validasi login
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
@@ -88,15 +88,12 @@ class _LoginPageState extends State<LoginPage> {
                   icon: Icon(
                     _show ? Icons.visibility : Icons.visibility_off,
                   ),
-<<<<<<< HEAD
                   onPressed: () => setState(() => _show = !_show),
-=======
                   onPressed: () {
                     setState(() {
                       _show = !_show;
                     });
                   },
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
                 ),
               ),
             ),
