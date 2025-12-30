@@ -4,19 +4,37 @@ import 'dashboard_page.dart';
 class LoginPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
 
-  const LoginPage({super.key, required this.onThemeChanged});
+  const LoginPage({
+    super.key,
+    required this.onThemeChanged,
+  });
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _user = TextEditingController();
-  final _pass = TextEditingController();
-  bool _show = false;
+  final TextEditingController _user = TextEditingController();
+  final TextEditingController _pass = TextEditingController();
+  bool _showPassword = false;
 
+<<<<<<< HEAD
   void login() {
     // validasi login
+=======
+  void _login() {
+    if (_user.text.trim().isEmpty || _pass.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Username dan Password wajib diisi'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+>>>>>>> cb51db46239f0d199c97c3f2489cd54c8a47ba7f
     if (_user.text == 'admin' && _pass.text == 'admin') {
       Navigator.pushReplacement(
         context,
@@ -28,14 +46,9 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username atau Password salah')),
-      );
-    } else {
-      // PESAN ERROR
-      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Username dan password tidak sesuai',
+            'Username atau Password salah',
             style: TextStyle(fontWeight: FontWeight.w500),
           ),
           backgroundColor: Colors.red,
@@ -65,9 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               'assets/logo_cadavis.jpg',
               height: 120,
             ),
-
             const SizedBox(height: 24),
-
             TextField(
               controller: _user,
               decoration: const InputDecoration(
@@ -75,63 +86,42 @@ class _LoginPageState extends State<LoginPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 16),
-
             TextField(
               controller: _pass,
-              obscureText: !_show,
+              obscureText: !_showPassword,
               decoration: InputDecoration(
                 labelText: 'Password',
                 border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _show ? Icons.visibility : Icons.visibility_off,
+                    _showPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
+<<<<<<< HEAD
                   onPressed: () => setState(() => _show = !_show),
+=======
+>>>>>>> cb51db46239f0d199c97c3f2489cd54c8a47ba7f
                   onPressed: () {
                     setState(() {
-                      _show = !_show;
+                      _showPassword = !_showPassword;
                     });
                   },
                 ),
               ),
             ),
-
-<<<<<<< HEAD
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('LOGIN'),
-=======
-            const SizedBox(height: 24),
-
             SizedBox(
               width: double.infinity,
-              height: 48,
               child: ElevatedButton(
                 onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C4DFF),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text(
-                  'LOGIN',
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text('LOGIN'),
               ),
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _user.dispose();
-    _pass.dispose();
-    super.dispose();
   }
 }

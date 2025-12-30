@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'pages/splash_page.dart';
 import 'pages/login_page.dart';
-<<<<<<< HEAD
-=======
 import 'pages/dashboard_page.dart';
 import 'pages/input_page.dart';
 import 'pages/laporan_page.dart';
 import 'pages/statistik_page.dart';
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
-
+import 'pages/riwayat_page.dart';
+import 'pages/kelola_data_page.dart';
 void main() {
   runApp(const CadavisApp());
 }
@@ -32,26 +31,37 @@ class _CadavisAppState extends State<CadavisApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
         brightness: _isDarkMode ? Brightness.dark : Brightness.light,
         primarySwatch: Colors.deepPurple,
+        useMaterial3: true,
       ),
-      home: LoginPage(
-        onThemeChanged: _toggleTheme,
-      ),
+
+      initialRoute: '/login',
+
       routes: {
-<<<<<<< HEAD
+        '/splash': (context) => SplashPage(
+              onThemeChanged: _toggleTheme,
+            ),
+
         '/login': (context) => LoginPage(
               onThemeChanged: _toggleTheme,
             ),
-=======
-        '/splash': (context) => const SplashPage(),
-        '/login': (context) => const LoginPage(),
-        '/dashboard': (context) => const DashboardPage(),
+
+        '/dashboard': (context) => DashboardPage(
+              onThemeChanged: _toggleTheme,
+            ),
+
         '/input': (context) => const InputJenazahPage(),
+
         '/laporan': (context) => LaporanPage(),
+
         '/statistik': (context) => const StatistikPage(),
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
+
+        '/riwayat': (context) => const RiwayatPage(),
+        '/kelola': (context) => const KelolaDataPage(),
+
       },
     );
   }

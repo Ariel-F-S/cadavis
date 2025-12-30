@@ -18,6 +18,27 @@ class Jenazah {
     required this.lokasiPenemuan,
     this.gambarPath,
   });
+    Jenazah copyWith({
+    int? id,
+    String? namaPetugas,
+    String? tanggalPenemuan,
+    String? waktuPenemuan,
+    int? jumlahLaki,
+    int? jumlahPerempuan,
+    String? lokasiPenemuan,
+    String? gambarPath,
+  }) {
+    return Jenazah(
+      id: id ?? this.id,
+      namaPetugas: namaPetugas ?? this.namaPetugas,
+      tanggalPenemuan: tanggalPenemuan ?? this.tanggalPenemuan,
+      waktuPenemuan: waktuPenemuan ?? this.waktuPenemuan,
+      jumlahLaki: jumlahLaki ?? this.jumlahLaki,
+      jumlahPerempuan: jumlahPerempuan ?? this.jumlahPerempuan,
+      lokasiPenemuan: lokasiPenemuan ?? this.lokasiPenemuan,
+      gambarPath: gambarPath,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {

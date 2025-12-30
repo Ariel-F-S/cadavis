@@ -57,4 +57,32 @@ class DatabaseHelper {
 
     return result.map((e) => Jenazah.fromMap(e)).toList();
   }
+  Future<int> updateJenazah(Jenazah jenazah) async {
+  final db = await database;
+  return db.update(
+    'jenazah',
+    jenazah.toMap(),
+    where: 'id = ?',
+    whereArgs: [jenazah.id],
+  );
+}
+
+Future<int> deleteJenazah(int id) async {
+  final db = await database;
+  return db.delete(
+    'jenazah',
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
+Future<List<Jenazah>> getAllJenazah() async {
+  final db = await database;
+  final result = await db.query(
+    'jenazah',
+    orderBy: 'tanggal_penemuan DESC',
+  );
+  return result.map((e) => Jenazah.fromMap(e)).toList();
+}
+
 }

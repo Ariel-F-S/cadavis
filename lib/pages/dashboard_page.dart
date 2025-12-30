@@ -6,7 +6,7 @@ import 'laporan_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
-  
+
   const DashboardPage({super.key, required this.onThemeChanged});
 
   @override
@@ -54,7 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -172,7 +172,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => InputJenazahPage()),
+                          MaterialPageRoute(
+                            builder: (context) => InputJenazahPage(),
+                          ),
                         );
                       },
                     ),
@@ -184,7 +186,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => LaporanPage()),
+                          MaterialPageRoute(
+                            builder: (context) => LaporanPage(),
+                          ),
                         );
                       },
                     ),
@@ -194,15 +198,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Grafik',
                       color: const Color(0xFFFF6D00),
                       onTap: () {
-<<<<<<< HEAD
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Statistik (Coming Soon)'),
-                          ),
-                        );
-=======
                         Navigator.pushNamed(context, '/statistik');
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
                       },
                     ),
                     _buildMenuCard(
@@ -211,11 +207,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Data',
                       color: const Color(0xFF0091EA),
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Riwayat (Coming Soon)'),
-                          ),
-                        );
+                        Navigator.pushNamed(context, '/riwayat');
                       },
                     ),
                   ],
@@ -231,15 +223,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 12),
 
                 _buildQuickActionCard(
-                  icon: Icons.search_rounded,
-                  title: 'Cari Data',
-                  subtitle: 'Cari berdasarkan nama atau lokasi',
+                  icon: Icons.manage_accounts_rounded,
+                  title: 'Kelola Data',
+                  subtitle: 'Edit & hapus data jenazah',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur Pencarian (Coming Soon)'),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/kelola');
                   },
                 ),
 
@@ -295,7 +283,7 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -346,12 +334,8 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final iconColor = color ?? const Color(0xFF7C4DFF);
-<<<<<<< HEAD
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-=======
 
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
