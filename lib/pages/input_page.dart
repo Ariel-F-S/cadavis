@@ -152,6 +152,8 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Input Data Jenazah'),
+          backgroundColor: const Color(0xFF7C4DFF),
+          foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

@@ -102,10 +102,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 // Menu Grid
                 const Text(
                   'Menu Utama',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
 
@@ -141,12 +138,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Grafik',
                       color: const Color(0xFFFF6D00),
                       onTap: () {
-                        // TODO: Navigasi ke halaman statistik
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Statistik (Coming Soon)'),
-                          ),
-                        );
+                        Navigator.pushNamed(context, '/statistik');
                       },
                     ),
                     _buildMenuCard(
@@ -171,10 +163,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 // Quick Actions
                 const Text(
                   'Aksi Cepat',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
 
@@ -191,9 +180,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     );
                   },
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 _buildQuickActionCard(
                   icon: Icons.backup_outlined,
                   title: 'Backup Data',
@@ -267,27 +256,17 @@ class _DashboardPageState extends State<DashboardPage> {
                 color: color.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                size: 32,
-                color: color,
-              ),
+              child: Icon(icon, size: 32, color: color),
             ),
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -303,7 +282,7 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final iconColor = color ?? const Color(0xFF7C4DFF);
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -328,11 +307,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 color: iconColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 24,
-              ),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -349,18 +324,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400]),
           ],
         ),
       ),
