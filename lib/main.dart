@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
-<<<<<<< HEAD
-=======
 import 'pages/dashboard_page.dart';
 import 'pages/input_page.dart';
 import 'pages/laporan_page.dart';
 import 'pages/statistik_page.dart';
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
 
 void main() {
   runApp(const CadavisApp());
@@ -40,18 +37,12 @@ class _CadavisAppState extends State<CadavisApp> {
         onThemeChanged: _toggleTheme,
       ),
       routes: {
-<<<<<<< HEAD
-        '/login': (context) => LoginPage(
-              onThemeChanged: _toggleTheme,
-            ),
-=======
         '/splash': (context) => const SplashPage(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/input': (context) => const InputJenazahPage(),
         '/laporan': (context) => LaporanPage(),
         '/statistik': (context) => const StatistikPage(),
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
       },
     );
   }

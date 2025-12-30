@@ -194,15 +194,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Grafik',
                       color: const Color(0xFFFF6D00),
                       onTap: () {
-<<<<<<< HEAD
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Statistik (Coming Soon)'),
-                          ),
-                        );
-=======
                         Navigator.pushNamed(context, '/statistik');
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
                       },
                     ),
                     _buildMenuCard(
@@ -346,12 +338,8 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final iconColor = color ?? const Color(0xFF7C4DFF);
-<<<<<<< HEAD
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-=======
-
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),

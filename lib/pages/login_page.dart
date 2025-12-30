@@ -88,42 +88,15 @@ class _LoginPageState extends State<LoginPage> {
                   icon: Icon(
                     _show ? Icons.visibility : Icons.visibility_off,
                   ),
-<<<<<<< HEAD
                   onPressed: () => setState(() => _show = !_show),
-=======
-                  onPressed: () {
-                    setState(() {
-                      _show = !_show;
-                    });
-                  },
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
                 ),
               ),
             ),
 
-<<<<<<< HEAD
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               child: const Text('LOGIN'),
-=======
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7C4DFF),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text(
-                  'LOGIN',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
->>>>>>> 5d6e09686732722101b74f8be3d0cc8fe89b9197
             ),
           ],
         ),
