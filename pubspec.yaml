@@ -26,6 +26,9 @@ dependencies:
   # LOGIN
   shared_preferences: ^2.2.2
 
+  # UPLOAD GAMBAR
+  image_picker: ^1.0.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
