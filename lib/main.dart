@@ -6,7 +6,7 @@ import 'pages/input_page.dart';
 import 'pages/laporan_page.dart';
 import 'pages/statistik_page.dart';
 import 'pages/riwayat_page.dart';
-
+import 'pages/kelola_data_page.dart';
 void main() {
   runApp(const CadavisApp());
 }
@@ -60,6 +60,8 @@ class _CadavisAppState extends State<CadavisApp> {
         '/statistik': (context) => const StatistikPage(),
 
         '/riwayat': (context) => const RiwayatPage(),
+        '/kelola': (context) => const KelolaDataPage(),
+
       },
     );
   }

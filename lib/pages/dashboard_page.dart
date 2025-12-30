@@ -223,15 +223,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 12),
 
                 _buildQuickActionCard(
-                  icon: Icons.search_rounded,
-                  title: 'Cari Data',
-                  subtitle: 'Cari berdasarkan nama atau lokasi',
+                  icon: Icons.manage_accounts_rounded,
+                  title: 'Kelola Data',
+                  subtitle: 'Edit & hapus data jenazah',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fitur Pencarian (Coming Soon)'),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/kelola');
                   },
                 ),
 
