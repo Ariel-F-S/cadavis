@@ -6,7 +6,7 @@ import 'laporan_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
-  
+
   const DashboardPage({super.key, required this.onThemeChanged});
 
   @override
@@ -54,7 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -172,7 +172,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => InputJenazahPage()),
+                          MaterialPageRoute(
+                            builder: (context) => InputJenazahPage(),
+                          ),
                         );
                       },
                     ),
@@ -184,7 +186,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => LaporanPage()),
+                          MaterialPageRoute(
+                            builder: (context) => LaporanPage(),
+                          ),
                         );
                       },
                     ),
@@ -203,11 +207,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Data',
                       color: const Color(0xFF0091EA),
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Riwayat (Coming Soon)'),
-                          ),
-                        );
+                        Navigator.pushNamed(context, '/riwayat');
                       },
                     ),
                   ],
@@ -287,7 +287,7 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -339,7 +339,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }) {
     final iconColor = color ?? const Color(0xFF7C4DFF);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
