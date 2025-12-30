@@ -5,6 +5,7 @@ import 'pages/dashboard_page.dart';
 import 'pages/input_page.dart';
 import 'pages/laporan_page.dart';
 import 'pages/statistik_page.dart';
+import 'pages/riwayat_page.dart';
 
 void main() {
   runApp(const CadavisApp());
@@ -40,16 +41,25 @@ class _CadavisAppState extends State<CadavisApp> {
       initialRoute: '/login',
 
       routes: {
-        '/splash': (context) => SplashPage(onThemeChanged: _toggleTheme),
-        '/login': (context) => LoginPage(onThemeChanged: _toggleTheme),
+        '/splash': (context) => SplashPage(
+              onThemeChanged: _toggleTheme,
+            ),
 
-        '/dashboard': (context) => DashboardPage(onThemeChanged: _toggleTheme),
+        '/login': (context) => LoginPage(
+              onThemeChanged: _toggleTheme,
+            ),
+
+        '/dashboard': (context) => DashboardPage(
+              onThemeChanged: _toggleTheme,
+            ),
 
         '/input': (context) => const InputJenazahPage(),
 
         '/laporan': (context) => LaporanPage(),
 
         '/statistik': (context) => const StatistikPage(),
+
+        '/riwayat': (context) => const RiwayatPage(), // ✅ ROUTE RIWAYAT
       },
     );
   }
