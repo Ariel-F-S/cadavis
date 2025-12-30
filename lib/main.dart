@@ -5,6 +5,8 @@ import 'pages/dashboard_page.dart';
 import 'pages/input_page.dart';
 import 'pages/laporan_page.dart';
 import 'pages/statistik_page.dart';
+import 'pages/riwayat_page.dart';
+
 
 void main() {
   runApp(const CadavisApp());
@@ -30,6 +32,7 @@ class CadavisApp extends StatelessWidget {
         '/input': (context) => const InputJenazahPage(),
         '/laporan': (context) => LaporanPage(),
         '/statistik': (context) => const StatistikPage(),
+        '/riwayat': (context) => const RiwayatPage(),
       },
     );
   }

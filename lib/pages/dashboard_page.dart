@@ -147,12 +147,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       subtitle: 'Data',
                       color: const Color(0xFF0091EA),
                       onTap: () {
-                        // TODO: Navigasi ke halaman riwayat
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Fitur Riwayat (Coming Soon)'),
-                          ),
-                        );
+                        Navigator.pushNamed(context, '/riwayat');
                       },
                     ),
                   ],
