@@ -431,7 +431,6 @@ class _BackupPageState extends State<BackupPage> {
                           const SizedBox(height: 4),
                           Text(
                             '• Backup mencakup SEMUA data jenazah\n'
-                            '• File disimpan di folder Download\n'
                             '• Format: Cadavis_Backup_[timestamp].xlsx\n'
                             '• Lakukan backup secara berkala\n'
                             '• Simpan file backup di tempat aman',
