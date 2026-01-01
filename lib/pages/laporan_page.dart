@@ -761,7 +761,6 @@ class _LaporanPageState extends State<LaporanPage> {
                           Text(
                             '• Pilih tanggal mulai wajib diisi\n'
                             '• Tanggal akhir opsional (jika tidak diisi, akan sampai hari ini)\n'
-                            '• File disimpan di folder Download\n'
                             '• Format nama: Cadavis_[tanggal].xlsx\n'
                             '• Android 13+ tidak perlu izin khusus',
                             style: TextStyle(
