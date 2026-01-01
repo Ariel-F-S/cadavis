@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' as ex;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 import '../db/database_helper.dart';
 import '../models/jenazah.dart';
@@ -16,27 +19,107 @@ class LaporanPage extends StatefulWidget {
 }
 
 class _LaporanPageState extends State<LaporanPage> {
-  String? _tanggalTerpilih;
-  List<Jenazah> _data = [];
   bool _isExporting = false;
+  DateTime? _selectedStartDate;
+  DateTime? _selectedEndDate;
+  int _totalData = 0;
+  bool _isLoadingCount = false;
 
-  Future<void> _pilihTanggal() async {
-    final date = await showDatePicker(
+  @override
+  void initState() {
+    super.initState();
+    _initializeDateFormatting();
+    _loadTotalData();
+  }
+
+  /// INITIALIZE DATE FORMATTING
+  Future<void> _initializeDateFormatting() async {
+    await initializeDateFormatting('id_ID', null);
+  }
+
+  /// LOAD TOTAL DATA
+  Future<void> _loadTotalData() async {
+    setState(() {
+      _isLoadingCount = true;
+    });
+    
+    final data = await DatabaseHelper.instance.getAllJenazah();
+    
+    if (mounted) {
+      setState(() {
+        _totalData = data.length;
+        _isLoadingCount = false;
+      });
+    }
+  }
+
+  /// PILIH TANGGAL AWAL
+  Future<void> _pickStartDate() async {
+    final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedStartDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF7C4DFF),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
-    if (date != null) {
-      final tanggal =
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-      final hasil = await DatabaseHelper.instance.getByTanggal(tanggal);
-
+    if (picked != null) {
       setState(() {
-        _tanggalTerpilih = tanggal;
-        _data = hasil;
+        _selectedStartDate = picked;
+        if (_selectedEndDate != null && _selectedEndDate!.isBefore(picked)) {
+          _selectedEndDate = null;
+        }
+      });
+    }
+  }
+
+  /// PILIH TANGGAL AKHIR
+  Future<void> _pickEndDate() async {
+    if (_selectedStartDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Pilih tanggal mulai terlebih dahulu'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedEndDate ?? _selectedStartDate ?? DateTime.now(),
+      firstDate: _selectedStartDate!,
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF7C4DFF),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedEndDate = picked;
       });
     }
   }
@@ -44,34 +127,177 @@ class _LaporanPageState extends State<LaporanPage> {
   /// REQUEST PERMISSION
   Future<bool> _requestPermission() async {
     if (Platform.isAndroid) {
-      // Untuk Android 13+ (API 33+)
-      final androidInfo = await Permission.storage.status;
-      
-      if (androidInfo.isGranted) {
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        final sdkInt = androidInfo.version.sdkInt;
+
+        if (sdkInt >= 33) {
+          return true;
+        }
+
+        if (sdkInt >= 30) {
+          if (await Permission.manageExternalStorage.isGranted) {
+            return true;
+          }
+
+          final status = await Permission.manageExternalStorage.request();
+          
+          if (status.isDenied || status.isPermanentlyDenied) {
+            if (mounted) {
+              _showPermissionDialog();
+            }
+            return false;
+          }
+          
+          return status.isGranted;
+        }
+
+        if (await Permission.storage.isGranted) {
+          return true;
+        }
+
+        final status = await Permission.storage.request();
+        
+        if (status.isDenied || status.isPermanentlyDenied) {
+          if (mounted) {
+            _showPermissionDialog();
+          }
+          return false;
+        }
+        
+        return status.isGranted;
+
+      } catch (e) {
+        debugPrint('Error checking permission: $e');
         return true;
       }
-
-      // Request storage permission
-      final status = await Permission.storage.request();
-      
-      if (status.isDenied || status.isPermanentlyDenied) {
-        // Jika ditolak, minta MANAGE_EXTERNAL_STORAGE
-        final manageStatus = await Permission.manageExternalStorage.request();
-        return manageStatus.isGranted;
-      }
-      
-      return status.isGranted;
     }
     return true;
   }
 
-  /// EXPORT EXCEL KE FOLDER DOWNLOAD
+  /// DIALOG PERMISSION
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Izin Diperlukan'),
+        content: const Text(
+          'Aplikasi memerlukan izin penyimpanan untuk menyimpan file Excel.\n\n'
+          'Silakan buka Settings > Apps > Cadavis > Permissions dan aktifkan izin Storage atau Files.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('BATAL'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7C4DFF),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('BUKA SETTINGS'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// FILTER DATA BERDASARKAN TANGGAL
+  List<Jenazah> _filterDataByDate(List<Jenazah> allData) {
+    if (_selectedStartDate == null && _selectedEndDate == null) {
+      return allData;
+    }
+
+    return allData.where((jenazah) {
+      try {
+        DateTime jenazahDate;
+        
+        if (jenazah.tanggalPenemuan.contains('/')) {
+          final dateParts = jenazah.tanggalPenemuan.split('/');
+          jenazahDate = DateTime(
+            int.parse(dateParts[2]),
+            int.parse(dateParts[1]),
+            int.parse(dateParts[0]),
+          );
+        } else if (jenazah.tanggalPenemuan.contains('-')) {
+          jenazahDate = DateTime.parse(jenazah.tanggalPenemuan);
+        } else {
+          return false;
+        }
+
+        if (_selectedStartDate != null) {
+          final startDateOnly = DateTime(_selectedStartDate!.year, _selectedStartDate!.month, _selectedStartDate!.day);
+          final jenazahDateOnly = DateTime(jenazahDate.year, jenazahDate.month, jenazahDate.day);
+          
+          if (jenazahDateOnly.isBefore(startDateOnly)) {
+            return false;
+          }
+        }
+        
+        if (_selectedEndDate != null) {
+          final endDateOnly = DateTime(_selectedEndDate!.year, _selectedEndDate!.month, _selectedEndDate!.day);
+          final jenazahDateOnly = DateTime(jenazahDate.year, jenazahDate.month, jenazahDate.day);
+          
+          if (jenazahDateOnly.isAfter(endDateOnly)) {
+            return false;
+          }
+        }
+
+        return true;
+      } catch (e) {
+        debugPrint('Error parsing date: ${jenazah.tanggalPenemuan} - $e');
+        return false;
+      }
+    }).toList();
+  }
+
+  /// GET SAVE PATH
+  Future<String> _getSavePath(String fileName) async {
+    if (Platform.isAndroid) {
+      try {
+        final deviceInfo = DeviceInfoPlugin();
+        final androidInfo = await deviceInfo.androidInfo;
+        final sdkInt = androidInfo.version.sdkInt;
+
+        if (sdkInt >= 29) {
+          final downloadDir = Directory('/storage/emulated/0/Download');
+          
+          if (await downloadDir.exists()) {
+            return '${downloadDir.path}/$fileName';
+          }
+        }
+
+        final docsDir = Directory('/storage/emulated/0/Documents');
+        if (await docsDir.exists()) {
+          return '${docsDir.path}/$fileName';
+        }
+
+        final appDir = await getExternalStorageDirectory();
+        return '${appDir!.path}/$fileName';
+
+      } catch (e) {
+        debugPrint('Error getting save path: $e');
+        final appDir = await getExternalStorageDirectory();
+        return '${appDir!.path}/$fileName';
+      }
+    } else {
+      final dir = await getApplicationDocumentsDirectory();
+      return '${dir.path}/$fileName';
+    }
+  }
+
+  /// EXPORT EXCEL
   Future<void> _exportExcel() async {
-    if (_tanggalTerpilih == null || _data.isEmpty) {
+    if (_selectedStartDate == null && _selectedEndDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Pilih tanggal & pastikan ada data'),
-          backgroundColor: Colors.red,
+          content: Text('⚠️ Pilih minimal tanggal mulai untuk export'),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
@@ -82,16 +308,15 @@ class _LaporanPageState extends State<LaporanPage> {
     });
 
     try {
-      // 1. Request Permission
-      bool hasPermission = await _requestPermission();
+      final allData = await DatabaseHelper.instance.getAllJenazah();
+      final filteredData = _filterDataByDate(allData);
       
-      if (!hasPermission) {
+      if (filteredData.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Permission ditolak. Buka Settings > Apps > Cadavis > Permissions > Storage'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 5),
+            content: Text('⚠️ Tidak ada data pada rentang tanggal yang dipilih'),
+            backgroundColor: Colors.orange,
           ),
         );
         setState(() {
@@ -100,113 +325,110 @@ class _LaporanPageState extends State<LaporanPage> {
         return;
       }
 
-      // 2. Buat Excel
-      final excel = Excel.createExcel();
+      bool hasPermission = await _requestPermission();
+      
+      if (!hasPermission) {
+        if (!mounted) return;
+        setState(() {
+          _isExporting = false;
+        });
+        return;
+      }
+
+      final excel = ex.Excel.createExcel();
       final sheet = excel['Laporan Jenazah'];
 
-      // Header
       sheet.appendRow([
-        TextCellValue('Nama Petugas'),
-        TextCellValue('Tanggal'),
-        TextCellValue('Waktu'),
-        TextCellValue('Laki-laki'),
-        TextCellValue('Perempuan'),
-        TextCellValue('Lokasi'),
+        ex.TextCellValue('No'),
+        ex.TextCellValue('Nama Petugas'),
+        ex.TextCellValue('Tanggal'),
+        ex.TextCellValue('Waktu'),
+        ex.TextCellValue('Laki-laki'),
+        ex.TextCellValue('Perempuan'),
+        ex.TextCellValue('Total'),
+        ex.TextCellValue('Lokasi'),
+        ex.TextCellValue('Koordinat GPS'),
       ]);
 
-      // Style header
-      for (int i = 0; i < 6; i++) {
+      for (int i = 0; i < 9; i++) {
         var cell = sheet.cell(
-          CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
+          ex.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
         );
-        cell.cellStyle = CellStyle(
+        cell.cellStyle = ex.CellStyle(
           bold: true,
-          backgroundColorHex: ExcelColor.fromHexString('#4A90E2'),
-          fontColorHex: ExcelColor.white,
+          backgroundColorHex: ex.ExcelColor.fromHexString('#7C4DFF'),
+          fontColorHex: ex.ExcelColor.white,
         );
       }
 
-      // Isi data
-      for (var j in _data) {
+      int no = 1;
+      for (var j in filteredData) {
         sheet.appendRow([
-          TextCellValue(j.namaPetugas),
-          TextCellValue(j.tanggalPenemuan),
-          TextCellValue(j.waktuPenemuan),
-          IntCellValue(j.jumlahLaki),
-          IntCellValue(j.jumlahPerempuan),
-          TextCellValue(j.lokasiPenemuan),
+          ex.IntCellValue(no),
+          ex.TextCellValue(j.namaPetugas),
+          ex.TextCellValue(j.tanggalPenemuan),
+          ex.TextCellValue(j.waktuPenemuan),
+          ex.IntCellValue(j.jumlahLaki),
+          ex.IntCellValue(j.jumlahPerempuan),
+          ex.IntCellValue(j.jumlahLaki + j.jumlahPerempuan),
+          ex.TextCellValue(j.lokasiPenemuan),
+          ex.TextCellValue(j.koordinatGPS ?? '-'),
         ]);
+        no++;
       }
 
-      // 3. Encode Excel
       var fileBytes = excel.encode();
       if (fileBytes == null) {
         throw Exception('Gagal membuat file Excel');
       }
 
-      // 4. Tentukan Path
-      String filePath;
-      
-      if (Platform.isAndroid) {
-        // Coba beberapa path untuk Android
-        final downloadDir = Directory('/storage/emulated/0/Download');
-        
-        if (await downloadDir.exists()) {
-          filePath = '${downloadDir.path}/Cadavis_${_tanggalTerpilih!}.xlsx';
-        } else {
-          // Fallback ke Documents
-          final dir = await getExternalStorageDirectory();
-          filePath = '${dir!.path}/Cadavis_${_tanggalTerpilih!}.xlsx';
-        }
-      } else {
-        final dir = await getApplicationDocumentsDirectory();
-        filePath = '${dir.path}/Cadavis_${_tanggalTerpilih!}.xlsx';
-      }
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final dateFormat = DateFormat('ddMMyyyy');
+      final startStr = _selectedStartDate != null ? dateFormat.format(_selectedStartDate!) : 'All';
+      final endStr = _selectedEndDate != null ? dateFormat.format(_selectedEndDate!) : 'Now';
+      final fileName = 'Cadavis_${startStr}_${endStr}_$timestamp.xlsx';
 
-      // 5. Simpan File
+      final filePath = await _getSavePath(fileName);
       final file = File(filePath);
+      
+      final dir = Directory(file.parent.path);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      
       await file.writeAsBytes(fileBytes);
 
-      // Verifikasi file tersimpan
       if (!await file.exists()) {
         throw Exception('File gagal disimpan');
       }
 
+      debugPrint('File saved at: $filePath');
+
       if (!mounted) return;
 
-      // 6. Tampilkan Notifikasi Sukses
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✓ File berhasil disimpan!\n$filePath'),
+          content: Text('✓ Berhasil export ${filteredData.length} data!\n📁 $filePath'),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
+          duration: const Duration(seconds: 5),
           action: SnackBarAction(
             label: 'BUKA',
             textColor: Colors.white,
             onPressed: () async {
-              final result = await OpenFile.open(filePath);
-              if (result.type != ResultType.done) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Tidak bisa membuka file: ${result.message}'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              }
+              await OpenFile.open(filePath);
             },
           ),
         ),
       );
 
-      // 7. Coba buka file otomatis
+      await Future.delayed(const Duration(milliseconds: 500));
       await OpenFile.open(filePath);
 
-    } catch (e) {
-      if (!mounted) return;
+    } catch (e, stackTrace) {
+      debugPrint('Export error: $e');
+      debugPrint('Stack trace: $stackTrace');
       
-      print('Error export: $e'); // Debug
+      if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -226,61 +448,228 @@ class _LaporanPageState extends State<LaporanPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('dd MMMM yyyy', 'id_ID');
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Export Data'),
+        backgroundColor: const Color(0xFF7C4DFF),
+        foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Button Pilih Tanggal
-            ElevatedButton.icon(
-              onPressed: _pilihTanggal,
-              icon: const Icon(Icons.calendar_today),
-              label: const Text('Pilih Tanggal'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7C4DFF),
-                foregroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C4DFF).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.file_download_outlined,
+                    size: 80,
+                    color: Color(0xFF7C4DFF),
+                  ),
+                ),
               ),
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Tampilkan Tanggal Terpilih
-            if (_tanggalTerpilih != null)
+              
+              const SizedBox(height: 32),
+              
+              const Text(
+                'Export Data Jenazah',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              const SizedBox(height: 12),
+              
               Text(
-                'Tanggal: $_tanggalTerpilih',
-                style: const TextStyle(fontSize: 16),
+                'Pilih rentang tanggal untuk export data jenazah\nmenjadi file Excel (.xlsx)',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
               ),
-            
-            const SizedBox(height: 16),
-            
-            // List Data
-            Expanded(
-              child: _data.isEmpty
-                  ? const Center(child: Text('Tidak ada data'))
-                  : ListView.builder(
-                      itemCount: _data.length,
-                      itemBuilder: (context, index) {
-                        final j = _data[index];
-                        return ListTile(
-                          title: Text(j.namaPetugas),
-                          subtitle: Text(
-                            'L: ${j.jumlahLaki} | P: ${j.jumlahPerempuan}\n${j.lokasiPenemuan}',
-                          ),
-                        );
-                      },
+              
+              const SizedBox(height: 32),
+
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? const Color(0xFF1E1E1E) 
+                      : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.inventory_2_outlined,
+                      color: Color(0xFF7C4DFF),
+                      size: 20,
                     ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Button Export Excel
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isExporting ? null : _exportExcel,
+                    const SizedBox(width: 8),
+                    Text(
+                      _isLoadingCount 
+                          ? 'Memuat...' 
+                          : 'Total Data: $_totalData',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              const Text(
+                'Filter Tanggal',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              InkWell(
+                onTap: _pickStartDate,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _selectedStartDate != null 
+                          ? const Color(0xFF7C4DFF) 
+                          : Colors.grey.shade300,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: _selectedStartDate != null 
+                            ? const Color(0xFF7C4DFF) 
+                            : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tanggal Mulai',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedStartDate != null
+                                  ? dateFormat.format(_selectedStartDate!)
+                                  : 'Pilih tanggal mulai',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: _selectedStartDate != null
+                                    ? (isDark ? Colors.white : Colors.black)
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              InkWell(
+                onTap: _pickEndDate,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _selectedEndDate != null 
+                          ? const Color(0xFF7C4DFF) 
+                          : Colors.grey.shade300,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: _selectedEndDate != null 
+                            ? const Color(0xFF7C4DFF) 
+                            : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tanggal Akhir (Opsional)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedEndDate != null
+                                  ? dateFormat.format(_selectedEndDate!)
+                                  : 'Pilih tanggal akhir',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: _selectedEndDate != null
+                                    ? (isDark ? Colors.white : Colors.black)
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_drop_down,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              ElevatedButton.icon(
+                onPressed: _isExporting ? null : _exportExcel,  // INI YANG DIPERBAIKI
                 icon: _isExporting
                     ? const SizedBox(
                         width: 20,
@@ -290,19 +679,104 @@ class _LaporanPageState extends State<LaporanPage> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(Icons.download),
+                    : const Icon(Icons.download, size: 24),
                 label: Text(
                   _isExporting ? 'EXPORTING...' : 'EXPORT EXCEL',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   backgroundColor: const Color(0xFF7C4DFF),
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 16),
+              
+              if (_selectedStartDate != null || _selectedEndDate != null)
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedStartDate = null;
+                      _selectedEndDate = null;
+                    });
+                  },
+                  icon: const Icon(Icons.clear),
+                  label: const Text('RESET FILTER'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    foregroundColor: const Color(0xFF7C4DFF),
+                    side: const BorderSide(
+                      color: Color(0xFF7C4DFF),
+                      width: 2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              
+              const SizedBox(height: 24),
+              
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? const Color(0xFF1E1E1E) 
+                      : Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.blue.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.blue[700],
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Informasi:',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '• Pilih tanggal mulai wajib diisi\n'
+                            '• Tanggal akhir opsional (jika tidak diisi, akan sampai hari ini)\n'
+                            '• File disimpan di folder Download\n'
+                            '• Format nama: Cadavis_[tanggal].xlsx\n'
+                            '• Android 13+ tidak perlu izin khusus',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

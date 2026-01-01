@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return openDatabase(
       path,
-      version: 3, 
+      version: 4, // UPDATE VERSION ke 4
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE jenazah (
@@ -30,13 +30,21 @@ class DatabaseHelper {
             jumlah_laki INTEGER,
             jumlah_perempuan INTEGER,
             lokasi_penemuan TEXT,
-            gambar_path TEXT
+            koordinatGps TEXT,
+            gambar_path TEXT,
+            gambar_lokasi_path TEXT
           )
         ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        // Upgrade dari versi 2 ke 3
         if (oldVersion < 3) {
           await db.execute('ALTER TABLE jenazah ADD COLUMN gambar_path TEXT');
+        }
+        // Upgrade dari versi 3 ke 4
+        if (oldVersion < 4) {
+          await db.execute('ALTER TABLE jenazah ADD COLUMN koordinatGps TEXT');
+          await db.execute('ALTER TABLE jenazah ADD COLUMN gambar_lokasi_path TEXT');
         }
       },
     );
@@ -57,32 +65,32 @@ class DatabaseHelper {
 
     return result.map((e) => Jenazah.fromMap(e)).toList();
   }
+
   Future<int> updateJenazah(Jenazah jenazah) async {
-  final db = await database;
-  return db.update(
-    'jenazah',
-    jenazah.toMap(),
-    where: 'id = ?',
-    whereArgs: [jenazah.id],
-  );
-}
+    final db = await database;
+    return db.update(
+      'jenazah',
+      jenazah.toMap(),
+      where: 'id = ?',
+      whereArgs: [jenazah.id],
+    );
+  }
 
-Future<int> deleteJenazah(int id) async {
-  final db = await database;
-  return db.delete(
-    'jenazah',
-    where: 'id = ?',
-    whereArgs: [id],
-  );
-}
+  Future<int> deleteJenazah(int id) async {
+    final db = await database;
+    return db.delete(
+      'jenazah',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 
-Future<List<Jenazah>> getAllJenazah() async {
-  final db = await database;
-  final result = await db.query(
-    'jenazah',
-    orderBy: 'tanggal_penemuan DESC',
-  );
-  return result.map((e) => Jenazah.fromMap(e)).toList();
-}
-
+  Future<List<Jenazah>> getAllJenazah() async {
+    final db = await database;
+    final result = await db.query(
+      'jenazah',
+      orderBy: 'tanggal_penemuan DESC',
+    );
+    return result.map((e) => Jenazah.fromMap(e)).toList();
+  }
 }

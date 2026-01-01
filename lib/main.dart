@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'pages/splash_page.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
@@ -7,7 +10,14 @@ import 'pages/laporan_page.dart';
 import 'pages/statistik_page.dart';
 import 'pages/riwayat_page.dart';
 import 'pages/kelola_data_page.dart';
-void main() {
+import 'pages/backup_page.dart';
+import 'pages/hapus_data_lama_page.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('id_ID', null);
+
   runApp(const CadavisApp());
 }
 
@@ -32,6 +42,20 @@ class _CadavisAppState extends State<CadavisApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
+      // 🔥 PENTING UNTUK DATE PICKER
+      locale: const Locale('id', 'ID'),
+
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
+      supportedLocales: const [
+        Locale('id', 'ID'),
+        Locale('en', 'US'),
+      ],
+
       theme: ThemeData(
         brightness: _isDarkMode ? Brightness.dark : Brightness.light,
         primarySwatch: Colors.deepPurple,
@@ -55,13 +79,18 @@ class _CadavisAppState extends State<CadavisApp> {
 
         '/input': (context) => const InputJenazahPage(),
 
-        '/laporan': (context) => LaporanPage(),
+        '/laporan': (context) => const LaporanPage(),
 
         '/statistik': (context) => const StatistikPage(),
 
         '/riwayat': (context) => const RiwayatPage(),
+
         '/kelola': (context) => const KelolaDataPage(),
 
+        // ✅ SEKARANG BISA DI KLIK
+        '/backup': (context) => const BackupPage(),
+
+        '/hapus-data-lama': (context) => const HapusDataLamaPage(),
       },
     );
   }

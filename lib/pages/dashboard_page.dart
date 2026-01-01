@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/theme_helper.dart';
 import 'input_page.dart';
 import 'laporan_page.dart';
+import 'backup_page.dart';
+import 'hapus_data_lama_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
@@ -238,7 +240,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   title: 'Backup Data',
                   subtitle: 'Cadangkan semua data ke file',
                   onTap: () {
-                    _showBackupDialog();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const BackupPage()),
+                    );
                   },
                 ),
 
@@ -250,7 +255,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   subtitle: 'Bersihkan data lebih dari 1 tahun',
                   color: Colors.orange,
                   onTap: () {
-                    _showDeleteOldDataDialog();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const HapusDataLamaPage()),
+                    );
                   },
                 ),
 
@@ -412,74 +420,6 @@ class _DashboardPageState extends State<DashboardPage> {
               foregroundColor: Colors.white,
             ),
             child: const Text('Keluar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showBackupDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Backup Data'),
-        content: const Text(
-          'Semua data akan di-export ke file Excel dan disimpan di folder Download.\n\nLanjutkan?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur Backup (Coming Soon)'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7C4DFF),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Backup'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteOldDataDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Data Lama'),
-        content: const Text(
-          'Data yang lebih dari 1 tahun akan dihapus permanen.\n\n⚠️ Aksi ini tidak dapat dibatalkan!\n\nLanjutkan?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Fitur Hapus Data Lama (Coming Soon)'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Hapus'),
           ),
         ],
       ),

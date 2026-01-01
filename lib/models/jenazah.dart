@@ -6,7 +6,9 @@ class Jenazah {
   final int jumlahLaki;
   final int jumlahPerempuan;
   final String lokasiPenemuan;
+  final String? koordinatGPS;
   final String? gambarPath;
+  final String? gambarLokasiPath;
 
   Jenazah({
     this.id,
@@ -16,9 +18,12 @@ class Jenazah {
     required this.jumlahLaki,
     required this.jumlahPerempuan,
     required this.lokasiPenemuan,
+    this.koordinatGPS,
     this.gambarPath,
+    this.gambarLokasiPath,
   });
-    Jenazah copyWith({
+
+  Jenazah copyWith({
     int? id,
     String? namaPetugas,
     String? tanggalPenemuan,
@@ -26,7 +31,9 @@ class Jenazah {
     int? jumlahLaki,
     int? jumlahPerempuan,
     String? lokasiPenemuan,
+    String? koordinatGPS,
     String? gambarPath,
+    String? gambarLokasiPath,
   }) {
     return Jenazah(
       id: id ?? this.id,
@@ -36,10 +43,13 @@ class Jenazah {
       jumlahLaki: jumlahLaki ?? this.jumlahLaki,
       jumlahPerempuan: jumlahPerempuan ?? this.jumlahPerempuan,
       lokasiPenemuan: lokasiPenemuan ?? this.lokasiPenemuan,
-      gambarPath: gambarPath,
+      koordinatGPS: koordinatGPS ?? this.koordinatGPS,
+      gambarPath: gambarPath ?? this.gambarPath,
+      gambarLokasiPath: gambarLokasiPath ?? this.gambarLokasiPath,
     );
   }
 
+  /// ✅ HARUS SAMA PERSIS DENGAN NAMA KOLOM DI DATABASE
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -49,20 +59,24 @@ class Jenazah {
       'jumlah_laki': jumlahLaki,
       'jumlah_perempuan': jumlahPerempuan,
       'lokasi_penemuan': lokasiPenemuan,
-      'gambar_path': gambarPath, 
+      'koordinat_gps': koordinatGPS, // 🔥 FIX
+      'gambar_path': gambarPath,
+      'gambar_lokasi_path': gambarLokasiPath,
     };
   }
 
   factory Jenazah.fromMap(Map<String, dynamic> map) {
     return Jenazah(
-      id: map['id'],
-      namaPetugas: map['nama_petugas'],
-      tanggalPenemuan: map['tanggal_penemuan'],
-      waktuPenemuan: map['waktu_penemuan'],
-      jumlahLaki: map['jumlah_laki'],
-      jumlahPerempuan: map['jumlah_perempuan'],
-      lokasiPenemuan: map['lokasi_penemuan'],
-      gambarPath: map['gambar_path'], 
+      id: map['id'] as int?,
+      namaPetugas: map['nama_petugas'] ?? '',
+      tanggalPenemuan: map['tanggal_penemuan'] ?? '',
+      waktuPenemuan: map['waktu_penemuan'] ?? '',
+      jumlahLaki: map['jumlah_laki'] ?? 0,
+      jumlahPerempuan: map['jumlah_perempuan'] ?? 0,
+      lokasiPenemuan: map['lokasi_penemuan'] ?? '',
+      koordinatGPS: map['koordinat_gps'], // 🔥 FIX
+      gambarPath: map['gambar_path'],
+      gambarLokasiPath: map['gambar_lokasi_path'],
     );
   }
 }

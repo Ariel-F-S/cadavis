@@ -70,8 +70,6 @@ class _StatistikPageState extends State<StatistikPage> {
     );
   }
 
-  // ================= SUMMARY =================
-
   Widget _buildSummaryCard() {
     return Row(
       children: [

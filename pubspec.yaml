@@ -1,16 +1,20 @@
-name: Cadavis
+name: cadavis
 description: "Cadaver Detection System"
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: ^3.0.0
 
 dependencies:
   flutter:
     sdk: flutter
-  fl_chart: ^0.66.2
+  
+  # LOCALIZATION
+  flutter_localizations:
+    sdk: flutter
+
   cupertino_icons: ^1.0.8
 
   # DATABASE
@@ -23,10 +27,17 @@ dependencies:
   permission_handler: ^11.3.1
   open_file: ^3.3.2
 
+  # DATE & DEVICE INFO
+  intl: 0.20.2
+  device_info_plus: ^10.1.0
+
   # LOGIN
   shared_preferences: ^2.2.2
 
-  # UPLOAD GAMBAR
+  # CHART
+  fl_chart: ^0.66.2
+
+  # IMAGE PICKER
   image_picker: ^1.0.7
 
 dev_dependencies:
@@ -35,7 +46,7 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
 
-  # ICON APK (WAJIB DI DEV DEPENDENCIES)
+  # APP ICON
   flutter_launcher_icons: ^0.13.1
 
 flutter:
@@ -45,7 +56,10 @@ flutter:
     - assets/logo_cadavis.jpg
     - assets/images.jpg
 
-# ⚠️ INI HARUS DI LUAR (ROOT), BUKAN DI FLUTTER
+
+# ============================
+# CONFIG ICON APK
+# ============================
 flutter_icons:
   android: true
   ios: true

@@ -24,7 +24,11 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
   DateTime? _tanggal;
   TimeOfDay? _waktu;
   
-  File? _selectedImage;
+  File? _selectedImageJenazah;
+  File? _selectedImageLokasi;
+  String? _koordinatGPS;
+  bool _isLoadingGPS = false;
+  
   final ImagePicker _picker = ImagePicker();
 
   String _formatTanggal(DateTime date) {
@@ -40,7 +44,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     return '$h:$m';
   }
 
-  Future<void> _pilihGambar(ImageSource source) async {
+  Future<void> _pilihGambar(ImageSource source, bool isLokasiImage) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
@@ -51,7 +55,11 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
 
       if (pickedFile != null) {
         setState(() {
-          _selectedImage = File(pickedFile.path);
+          if (isLokasiImage) {
+            _selectedImageLokasi = File(pickedFile.path);
+          } else {
+            _selectedImageJenazah = File(pickedFile.path);
+          }
         });
       }
     } catch (e) {
@@ -62,11 +70,11 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     }
   }
 
-  void _showImageSourceDialog() {
+  void _showImageSourceDialog(bool isLokasiImage) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pilih Sumber Gambar'),
+        title: Text(isLokasiImage ? 'Pilih Foto Lokasi' : 'Pilih Foto Jenazah'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -75,7 +83,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
               title: const Text('Kamera'),
               onTap: () {
                 Navigator.pop(context);
-                _pilihGambar(ImageSource.camera);
+                _pilihGambar(ImageSource.camera, isLokasiImage);
               },
             ),
             ListTile(
@@ -83,7 +91,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
               title: const Text('Galeri'),
               onTap: () {
                 Navigator.pop(context);
-                _pilihGambar(ImageSource.gallery);
+                _pilihGambar(ImageSource.gallery, isLokasiImage);
               },
             ),
           ],
@@ -92,10 +100,48 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     );
   }
 
-  Future<String?> _simpanGambar(File imageFile) async {
+  Future<void> _ambilLokasiGPS() async {
+    setState(() {
+      _isLoadingGPS = true;
+    });
+
+    try {
+      // TODO: Implementasi GPS nanti pakai package geolocator
+      // Untuk sekarang simulasi aja
+      await Future.delayed(const Duration(seconds: 2));
+      
+      // Contoh koordinat (nanti ganti dengan GPS real)
+      setState(() {
+        _koordinatGPS = '-7.5489, 112.2493'; // Contoh: Surabaya
+        _isLoadingGPS = false;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Lokasi GPS berhasil didapatkan'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _isLoadingGPS = false;
+      });
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mendapatkan GPS: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  Future<String?> _simpanGambar(File imageFile, String prefix) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName = '${prefix}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final savedPath = path.join(appDir.path, 'jenazah_images', fileName);
 
       final folder = Directory(path.join(appDir.path, 'jenazah_images'));
@@ -112,18 +158,43 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
   }
 
   Future<void> _simpanData() async {
-    if (!_formKey.currentState!.validate() ||
-        _tanggal == null ||
-        _waktu == null) {
+    // Validasi form
+    if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lengkapi semua data')),
+        const SnackBar(content: Text('Lengkapi semua data yang wajib diisi')),
       );
       return;
     }
 
-    String? gambarPath;
-    if (_selectedImage != null) {
-      gambarPath = await _simpanGambar(_selectedImage!);
+    // Validasi tanggal dan waktu
+    if (_tanggal == null || _waktu == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tanggal dan waktu wajib diisi')),
+      );
+      return;
+    }
+
+    // Validasi foto lokasi (WAJIB)
+    if (_selectedImageLokasi == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Foto lokasi wajib diisi!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Simpan gambar jenazah (opsional)
+    String? gambarJenazahPath;
+    if (_selectedImageJenazah != null) {
+      gambarJenazahPath = await _simpanGambar(_selectedImageJenazah!, 'jenazah');
+    }
+
+    // Simpan gambar lokasi (wajib)
+    String? gambarLokasiPath;
+    if (_selectedImageLokasi != null) {
+      gambarLokasiPath = await _simpanGambar(_selectedImageLokasi!, 'lokasi');
     }
 
     final jenazah = Jenazah(
@@ -133,7 +204,9 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       jumlahLaki: int.parse(_jumlahLakiController.text),
       jumlahPerempuan: int.parse(_jumlahPerempuanController.text),
       lokasiPenemuan: _lokasiController.text,
-      gambarPath: gambarPath,
+      koordinatGPS: _koordinatGPS,
+      gambarPath: gambarJenazahPath,
+      gambarLokasiPath: gambarLokasiPath,
     );
 
     await DatabaseHelper.instance.insertJenazah(jenazah);
@@ -141,7 +214,10 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data berhasil disimpan')),
+      const SnackBar(
+        content: Text('✓ Data berhasil disimpan'),
+        backgroundColor: Colors.green,
+      ),
     );
 
     Navigator.pop(context);
@@ -149,11 +225,13 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Input Data Jenazah'),
-          backgroundColor: const Color(0xFF7C4DFF),
-          foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF7C4DFF),
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -161,53 +239,292 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
           key: _formKey,
           child: ListView(
             children: [
+              // Nama Petugas
               TextFormField(
                 controller: _namaPetugasController,
-                decoration: const InputDecoration(labelText: 'Nama Petugas'),
+                decoration: const InputDecoration(
+                  labelText: 'Nama Petugas *',
+                  prefixIcon: Icon(Icons.person),
+                ),
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
 
+              const SizedBox(height: 16),
+
+              // SECTION: LOKASI
+              const Divider(),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: Color(0xFF7C4DFF)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Data Lokasi',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
 
+              // Perkiraan Lokasi (WAJIB)
               TextFormField(
                 controller: _lokasiController,
                 decoration: const InputDecoration(
-                    labelText: 'Perkiraan Lokasi Penemuan'),
+                  labelText: 'Perkiraan Lokasi Penemuan *',
+                  prefixIcon: Icon(Icons.place),
+                  hintText: 'Contoh: Jl. Raya Kampung, Desa X',
+                ),
+                maxLines: 2,
                 validator: (v) =>
                     v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
 
               const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _jumlahLakiController,
-                decoration:
-                    const InputDecoration(labelText: 'Jumlah Laki-laki'),
-                keyboardType: TextInputType.number,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+              // Koordinat GPS (Opsional)
+              Card(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.gps_fixed,
+                            size: 20,
+                            color: _koordinatGPS != null
+                                ? Colors.green
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Koordinat GPS (Opsional)',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_koordinatGPS != null)
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle,
+                                  color: Colors.green, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _koordinatGPS!,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, size: 18),
+                                onPressed: () {
+                                  setState(() {
+                                    _koordinatGPS = null;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Text(
+                          'Ambil koordinat GPS jika ada sinyal',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _isLoadingGPS ? null : _ambilLokasiGPS,
+                        icon: _isLoadingGPS
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.my_location, size: 18),
+                        label: Text(_isLoadingGPS
+                            ? 'Mengambil Lokasi...'
+                            : 'Ambil Lokasi GPS'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0091EA),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
               const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _jumlahPerempuanController,
-                decoration:
-                    const InputDecoration(labelText: 'Jumlah Perempuan'),
-                keyboardType: TextInputType.number,
-                validator: (v) =>
-                    v == null
- || v.isEmpty ? 'Wajib diisi' : null,
+              // Foto Lokasi (WAJIB)
+              Card(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.red.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.photo_camera,
+                              color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Foto Lokasi *',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'WAJIB',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_selectedImageLokasi != null)
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                _selectedImageLokasi!,
+                                height: 150,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton(
+                                icon: const Icon(Icons.close,
+                                    color: Colors.white),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedImageLokasi = null;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.add_a_photo),
+                          label: const Text('Ambil Foto Lokasi'),
+                          onPressed: () => _showImageSourceDialog(true),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
+
               const SizedBox(height: 16),
 
+              // SECTION: DATA JENAZAH
+              const Divider(),
+              Row(
+                children: [
+                  const Icon(Icons.person_outline, color: Color(0xFF7C4DFF)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Data Jenazah',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Jumlah Laki-laki
+              TextFormField(
+                controller: _jumlahLakiController,
+                decoration: const InputDecoration(
+                  labelText: 'Jumlah Laki-laki *',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Jumlah Perempuan
+              TextFormField(
+                controller: _jumlahPerempuanController,
+                decoration: const InputDecoration(
+                  labelText: 'Jumlah Perempuan *',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Tanggal Penemuan
               ElevatedButton.icon(
                 icon: const Icon(Icons.date_range),
                 label: Text(
                   _tanggal == null
-                      ? 'Pilih Tanggal Penemuan'
+                      ? 'Pilih Tanggal Penemuan *'
                       : 'Tanggal: ${_formatTanggal(_tanggal!)}',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C4DFF),
+                  foregroundColor: Colors.white,
                 ),
                 onPressed: () async {
                   final picked = await showDatePicker(
@@ -224,12 +541,17 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
 
               const SizedBox(height: 8),
 
+              // Waktu Penemuan
               ElevatedButton.icon(
                 icon: const Icon(Icons.access_time),
                 label: Text(
                   _waktu == null
-                      ? 'Pilih Waktu Penemuan'
+                      ? 'Pilih Waktu Penemuan *'
                       : 'Waktu: ${_formatWaktu(_waktu!)}',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C4DFF),
+                  foregroundColor: Colors.white,
                 ),
                 onPressed: () async {
                   final picked = await showTimePicker(
@@ -242,23 +564,31 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
 
               const SizedBox(height: 16),
 
+              // Foto Jenazah (Opsional)
               const Divider(),
-              const Text(
-                'Foto Jenazah (Opsional)',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  const Icon(Icons.photo_library_outlined,
+                      color: Color(0xFF7C4DFF)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Foto Jenazah (Opsional)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
 
-              if (_selectedImage != null)
+              if (_selectedImageJenazah != null)
                 Stack(
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.file(
-                        _selectedImage!,
+                        _selectedImageJenazah!,
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -274,7 +604,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _selectedImage = null;
+                            _selectedImageJenazah = null;
                           });
                         },
                       ),
@@ -285,15 +615,42 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add_photo_alternate),
                   label: const Text('Tambah Foto Jenazah'),
-                  onPressed: _showImageSourceDialog,
+                  onPressed: () => _showImageSourceDialog(false),
                 ),
 
               const SizedBox(height: 24),
 
+              // Tombol Simpan
               ElevatedButton(
                 onPressed: _simpanData,
-                child: const Text('SIMPAN DATA'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C4DFF),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: const Text(
+                  'SIMPAN DATA',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
+
+              const SizedBox(height: 8),
+
+              // Info wajib
+              Text(
+                '* Wajib diisi',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
