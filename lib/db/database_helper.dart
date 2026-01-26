@@ -30,7 +30,7 @@ class DatabaseHelper {
             jumlah_laki INTEGER,
             jumlah_perempuan INTEGER,
             lokasi_penemuan TEXT,
-            koordinatGps TEXT,
+            koordinat_gps TEXT,
             gambar_path TEXT,
             gambar_lokasi_path TEXT
           )

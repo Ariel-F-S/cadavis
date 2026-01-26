@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:path/path.dart' as path;
 import '../db/database_helper.dart';
 import '../models/jenazah.dart';
@@ -54,13 +56,15 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       );
 
       if (pickedFile != null) {
-        setState(() {
-          if (isLokasiImage) {
-            _selectedImageLokasi = File(pickedFile.path);
-          } else {
-            _selectedImageJenazah = File(pickedFile.path);
-          }
-        });
+        if (mounted) {
+          setState(() {
+            if (isLokasiImage) {
+              _selectedImageLokasi = File(pickedFile.path);
+            } else {
+              _selectedImageJenazah = File(pickedFile.path);
+            }
+          });
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -101,40 +105,73 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
   }
 
   Future<void> _ambilLokasiGPS() async {
-    setState(() {
-      _isLoadingGPS = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoadingGPS = true;
+      });
+    }
 
     try {
-      // TODO: Implementasi GPS nanti pakai package geolocator
-      // Untuk sekarang simulasi aja
-      await Future.delayed(const Duration(seconds: 2));
-      
-      // Contoh koordinat (nanti ganti dengan GPS real)
-      setState(() {
-        _koordinatGPS = '-7.5489, 112.2493'; // Contoh: Surabaya
-        _isLoadingGPS = false;
-      });
+      // Cek permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Izin lokasi ditolak');
+        }
+      }
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Lokasi GPS berhasil didapatkan'),
-          backgroundColor: Colors.green,
-        ),
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Izin lokasi ditolak permanen. Buka Settings.');
+      }
+
+      // Ambil posisi dengan timeout
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw TimeoutException('GPS timeout');
+        },
       );
+
+      if (mounted) {
+        setState(() {
+          _koordinatGPS = '${position.latitude}, ${position.longitude}';
+          _isLoadingGPS = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Lokasi GPS berhasil didapatkan'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() {
+          _isLoadingGPS = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Timeout: GPS memakan waktu terlalu lama'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingGPS = false;
-      });
-      
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mendapatkan GPS: $e'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _isLoadingGPS = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Gagal mendapatkan GPS: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -152,7 +189,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       final savedImage = await imageFile.copy(savedPath);
       return savedImage.path;
     } catch (e) {
-      print('Error menyimpan gambar: $e');
+      debugPrint('Error menyimpan gambar: $e');
       return null;
     }
   }
@@ -185,42 +222,102 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       return;
     }
 
+    // Validasi angka dengan try-catch
+    int? jumlahLaki;
+    int? jumlahPerempuan;
+    
+    try {
+      jumlahLaki = int.parse(_jumlahLakiController.text);
+      jumlahPerempuan = int.parse(_jumlahPerempuanController.text);
+      
+      if (jumlahLaki < 0 || jumlahPerempuan < 0) {
+        throw FormatException('Angka tidak boleh negatif');
+      }
+      
+      if (jumlahLaki == 0 && jumlahPerempuan == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Total jenazah tidak boleh 0'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Format angka tidak valid: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Simpan gambar jenazah (opsional)
     String? gambarJenazahPath;
     if (_selectedImageJenazah != null) {
       gambarJenazahPath = await _simpanGambar(_selectedImageJenazah!, 'jenazah');
+      if (gambarJenazahPath == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Gagal menyimpan foto jenazah'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
 
     // Simpan gambar lokasi (wajib)
     String? gambarLokasiPath;
     if (_selectedImageLokasi != null) {
       gambarLokasiPath = await _simpanGambar(_selectedImageLokasi!, 'lokasi');
+      if (gambarLokasiPath == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Gagal menyimpan foto lokasi'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
 
-    final jenazah = Jenazah(
-      namaPetugas: _namaPetugasController.text,
-      tanggalPenemuan: _formatTanggal(_tanggal!),
-      waktuPenemuan: _formatWaktu(_waktu!),
-      jumlahLaki: int.parse(_jumlahLakiController.text),
-      jumlahPerempuan: int.parse(_jumlahPerempuanController.text),
-      lokasiPenemuan: _lokasiController.text,
-      koordinatGPS: _koordinatGPS,
-      gambarPath: gambarJenazahPath,
-      gambarLokasiPath: gambarLokasiPath,
-    );
+    try {
+      final jenazah = Jenazah(
+        namaPetugas: _namaPetugasController.text.trim(),
+        tanggalPenemuan: _formatTanggal(_tanggal!),
+        waktuPenemuan: _formatWaktu(_waktu!),
+        jumlahLaki: jumlahLaki!,
+        jumlahPerempuan: jumlahPerempuan!,
+        lokasiPenemuan: _lokasiController.text.trim(),
+        koordinatGPS: _koordinatGPS,
+        gambarPath: gambarJenazahPath,
+        gambarLokasiPath: gambarLokasiPath,
+      );
 
-    await DatabaseHelper.instance.insertJenazah(jenazah);
+      await DatabaseHelper.instance.insertJenazah(jenazah);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✓ Data berhasil disimpan'),
-        backgroundColor: Colors.green,
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Data berhasil disimpan'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-    Navigator.pop(context);
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Gagal menyimpan data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -247,7 +344,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                   prefixIcon: Icon(Icons.person),
                 ),
                 validator: (v) =>
-                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+                    v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
               ),
 
               const SizedBox(height: 16),
@@ -279,7 +376,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                 ),
                 maxLines: 2,
                 validator: (v) =>
-                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+                    v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
               ),
 
               const SizedBox(height: 12),
@@ -494,8 +591,12 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                   prefixIcon: Icon(Icons.person),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                  if (int.tryParse(v) == null) return 'Harus angka';
+                  if (int.parse(v) < 0) return 'Tidak boleh negatif';
+                  return null;
+                },
               ),
 
               const SizedBox(height: 12),
@@ -508,8 +609,12 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                   prefixIcon: Icon(Icons.person),
                 ),
                 keyboardType: TextInputType.number,
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Wajib diisi' : null,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Wajib diisi';
+                  if (int.tryParse(v) == null) return 'Harus angka';
+                  if (int.parse(v) < 0) return 'Tidak boleh negatif';
+                  return null;
+                },
               ),
 
               const SizedBox(height: 16),
@@ -533,7 +638,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                     firstDate: DateTime(2020),
                     lastDate: DateTime.now(),
                   );
-                  if (picked != null) {
+                  if (picked != null && mounted) {
                     setState(() => _tanggal = picked);
                   }
                 },
@@ -556,7 +661,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                 onPressed: () async {
                   final picked = await showTimePicker(
                       context: context, initialTime: TimeOfDay.now());
-                  if (picked != null) {
+                  if (picked != null && mounted) {
                     setState(() => _waktu = picked);
                   }
                 },
@@ -664,6 +769,11 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     _lokasiController.dispose();
     _jumlahLakiController.dispose();
     _jumlahPerempuanController.dispose();
+    
+
+    _selectedImageJenazah = null;
+    _selectedImageLokasi = null;
+    
     super.dispose();
   }
 }
