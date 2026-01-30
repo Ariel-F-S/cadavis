@@ -30,7 +30,7 @@ class DatabaseHelper {
             jumlah_laki INTEGER,
             jumlah_perempuan INTEGER,
             lokasi_penemuan TEXT,
-            koordinatGps TEXT,
+            koordinat_gps TEXT,
             gambar_path TEXT,
             gambar_lokasi_path TEXT
           )
@@ -43,7 +43,7 @@ class DatabaseHelper {
         }
         // Upgrade dari versi 3 ke 4
         if (oldVersion < 4) {
-          await db.execute('ALTER TABLE jenazah ADD COLUMN koordinatGps TEXT');
+          await db.execute( 'ALTER TABLE jenazah ADD COLUMN koordinat_gps TEXT');
           await db.execute('ALTER TABLE jenazah ADD COLUMN gambar_lokasi_path TEXT');
         }
       },
