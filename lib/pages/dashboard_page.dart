@@ -79,7 +79,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     });
                     widget.onThemeChanged(value);
                   },
-                  activeColor: const Color(0xFF7C4DFF),
+                  activeThumbColor: const Color(0xFF7C4DFF),
                 ),
                 Icon(
                   Icons.dark_mode,

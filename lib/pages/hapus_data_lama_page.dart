@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../db/database_helper.dart';
 import '../models/jenazah.dart';

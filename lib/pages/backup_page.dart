@@ -8,7 +8,6 @@ import 'package:intl/intl.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 import '../db/database_helper.dart';
-import '../models/jenazah.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
