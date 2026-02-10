@@ -8,8 +8,13 @@ import 'hapus_data_lama_page.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
+  final String role; // ✅ Tambahan role
 
-  const DashboardPage({super.key, required this.onThemeChanged});
+  const DashboardPage({
+    super.key,
+    required this.onThemeChanged,
+    required this.role,
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -122,7 +127,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _getSapaan(),
+                        '${_getSapaan()}, ${widget.role == 'admin' ? 'Admin' : 'Pengguna'}',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 16,
@@ -166,20 +171,21 @@ class _DashboardPageState extends State<DashboardPage> {
                   crossAxisSpacing: 16,
                   childAspectRatio: 1.1,
                   children: [
-                    _buildMenuCard(
-                      icon: Icons.add_circle_outline,
-                      title: 'Input Data',
-                      subtitle: 'Jenazah',
-                      color: const Color(0xFF7C4DFF),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => InputJenazahPage(),
-                          ),
-                        );
-                      },
-                    ),
+                    if (widget.role == 'admin') // ✅ hanya admin bisa input
+                      _buildMenuCard(
+                        icon: Icons.add_circle_outline,
+                        title: 'Input Data',
+                        subtitle: 'Jenazah',
+                        color: const Color(0xFF7C4DFF),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => InputJenazahPage(),
+                            ),
+                          );
+                        },
+                      ),
                     _buildMenuCard(
                       icon: Icons.download_outlined,
                       title: 'Export Data',
@@ -283,6 +289,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // ================== Helper Widgets ==================
   Widget _buildMenuCard({
     required IconData icon,
     required String title,

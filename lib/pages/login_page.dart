@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dashboard_page.dart';
+import '../db/database_helper.dart';
+import '../models/user.dart';
 
 class LoginPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
@@ -17,9 +18,9 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _user = TextEditingController();
   final TextEditingController _pass = TextEditingController();
   bool _showPassword = false;
+  bool _isLoading = false;
 
-  // validasi login
-  void login() {
+  Future<void> login() async {
     if (_user.text.trim().isEmpty || _pass.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -31,14 +32,25 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (_user.text == 'admin' && _pass.text == 'admin') {
-      Navigator.pushReplacement(
+    setState(() {
+      _isLoading = true;
+    });
+
+    final user = await DatabaseHelper.instance.getUser(
+      _user.text.trim(),
+      _pass.text.trim(),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (user != null) {
+      // ✅ Gunakan route bawaan dengan arguments
+      Navigator.pushReplacementNamed(
         context,
-        MaterialPageRoute(
-          builder: (_) => DashboardPage(
-            onThemeChanged: widget.onThemeChanged,
-          ),
-        ),
+        '/dashboard',
+        arguments: {'role': user.role},
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,8 +119,17 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: login, // ✅ BENAR
-                child: const Text('LOGIN'),
+                onPressed: _isLoading ? null : login,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('LOGIN'),
               ),
             ),
           ],

@@ -31,6 +31,9 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
   String? _koordinatGPS;
   bool _isLoadingGPS = false;
   
+  // ✅ TAMBAHAN: Status korban
+  String _statusKorban = 'Meninggal'; // Default: Meninggal
+  
   final ImagePicker _picker = ImagePicker();
 
   String _formatTanggal(DateTime date) {
@@ -103,7 +106,6 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       ),
     );
   }
-
   Future<void> _ambilLokasiGPS() async {
     if (mounted) {
       setState(() {
@@ -211,6 +213,14 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       return;
     }
 
+    // Validasi status korban
+    if (_statusKorban.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Status korban wajib dipilih')),
+      );
+      return;
+    }
+
     // Validasi foto lokasi (WAJIB)
     if (_selectedImageLokasi == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -295,6 +305,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
         koordinatGPS: _koordinatGPS,
         gambarPath: gambarJenazahPath,
         gambarLokasiPath: gambarLokasiPath,
+        statusKorban: _statusKorban, // ✅ TAMBAHAN: Simpan status korban
       );
 
       await DatabaseHelper.instance.insertJenazah(jenazah);
@@ -308,6 +319,21 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
         ),
       );
 
+      // ✅ Reset form setelah simpan
+      _formKey.currentState!.reset();
+      _namaPetugasController.clear();
+      _lokasiController.clear();
+      _jumlahLakiController.clear();
+      _jumlahPerempuanController.clear();
+      setState(() {
+        _tanggal = null;
+        _waktu = null;
+        _selectedImageJenazah = null;
+        _selectedImageLokasi = null;
+        _koordinatGPS = null;
+        _statusKorban = 'Meninggal'; // balik ke default
+      });
+
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -319,7 +345,6 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -381,7 +406,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
 
               const SizedBox(height: 12),
 
-              // Koordinat GPS (Opsional)
+              // Koordinat GPS (Jika terdapat sinyal)
               Card(
                 color: isDark ? const Color(0xFF1E1E1E) : Colors.blue.shade50,
                 child: Padding(
@@ -400,7 +425,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Koordinat GPS (Opsional)',
+                            'Koordinat GPS',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: isDark ? Colors.white : Colors.black87,
@@ -563,7 +588,6 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
 
               // SECTION: DATA JENAZAH
@@ -581,6 +605,86 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+
+              // ✅ TAMBAHAN: Status Korban (Hidup/Meninggal)
+              Card(
+                color: isDark 
+                    ? const Color(0xFF1E1E1E) 
+                    : (_statusKorban == 'Hidup' 
+                        ? Colors.green.shade50 
+                        : Colors.red.shade50),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _statusKorban == 'Hidup' 
+                                ? Icons.favorite 
+                                : Icons.heart_broken,
+                            color: _statusKorban == 'Hidup' 
+                                ? Colors.green 
+                                : Colors.red,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Status Korban *',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              value: 'Hidup',
+                              groupValue: _statusKorban,
+                              onChanged: (value) {
+                                setState(() {
+                                  _statusKorban = value!;
+                                });
+                              },
+                              title: const Text('Hidup'),
+                              activeColor: Colors.green,
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              value: 'Meninggal',
+                              groupValue: _statusKorban,
+                              onChanged: (value) {
+                                setState(() {
+                                  _statusKorban = value!;
+                                });
+                              },
+                              title: const Text('Meninggal'),
+                              activeColor: Colors.red,
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Pilih apakah korban ditemukan dalam keadaan hidup atau meninggal',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 12),
 
               // Jumlah Laki-laki
@@ -666,7 +770,6 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                   }
                 },
               ),
-
               const SizedBox(height: 16),
 
               // Foto Jenazah (Opsional)
@@ -749,31 +852,13 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                 '* Wajib diisi',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
                 ),
-                textAlign: TextAlign.center,
               ),
-
-              const SizedBox(height: 20),
             ],
           ),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _namaPetugasController.dispose();
-    _lokasiController.dispose();
-    _jumlahLakiController.dispose();
-    _jumlahPerempuanController.dispose();
-    
-
-    _selectedImageJenazah = null;
-    _selectedImageLokasi = null;
-    
-    super.dispose();
   }
 }

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+// ✅ Tambahan import untuk reset database
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+
 import 'pages/splash_page.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
@@ -15,8 +19,11 @@ import 'pages/hapus_data_lama_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await initializeDateFormatting('id_ID', null);
+
+  // ✅ Reset database lama (hapus cadavis.db)
+  final dbPath = await getDatabasesPath();
+  await deleteDatabase(join(dbPath, 'cadavis.db'));
 
   runApp(const CadavisApp());
 }
@@ -64,33 +71,43 @@ class _CadavisAppState extends State<CadavisApp> {
 
       initialRoute: '/login',
 
-      routes: {
-        '/splash': (context) => SplashPage(
-              onThemeChanged: _toggleTheme,
-            ),
-
-        '/login': (context) => LoginPage(
-              onThemeChanged: _toggleTheme,
-            ),
-
-        '/dashboard': (context) => DashboardPage(
-              onThemeChanged: _toggleTheme,
-            ),
-
-        '/input': (context) => const InputJenazahPage(),
-
-        '/laporan': (context) => const LaporanPage(),
-
-        '/statistik': (context) => const StatistikPage(),
-
-        '/riwayat': (context) => const RiwayatPage(),
-
-        '/kelola': (context) => const KelolaDataPage(),
-
-        // ✅ SEKARANG BISA DI KLIK
-        '/backup': (context) => const BackupPage(),
-
-        '/hapus-data-lama': (context) => const HapusDataLamaPage(),
+      // ✅ Gunakan onGenerateRoute agar bisa kirim argumen (role)
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/splash':
+            return MaterialPageRoute(
+              builder: (_) => SplashPage(onThemeChanged: _toggleTheme),
+            );
+          case '/login':
+            return MaterialPageRoute(
+              builder: (_) => LoginPage(onThemeChanged: _toggleTheme),
+            );
+          case '/dashboard':
+            final args = settings.arguments as Map<String, dynamic>? ?? {};
+            final role = args['role'] ?? 'pengguna';
+            return MaterialPageRoute(
+              builder: (_) => DashboardPage(
+                onThemeChanged: _toggleTheme,
+                role: role,
+              ),
+            );
+          case '/input':
+            return MaterialPageRoute(builder: (_) => const InputJenazahPage());
+          case '/laporan':
+            return MaterialPageRoute(builder: (_) => const LaporanPage());
+          case '/statistik':
+            return MaterialPageRoute(builder: (_) => const StatistikPage());
+          case '/riwayat':
+            return MaterialPageRoute(builder: (_) => const RiwayatPage());
+          case '/kelola':
+            return MaterialPageRoute(builder: (_) => const KelolaDataPage());
+          case '/backup':
+            return MaterialPageRoute(builder: (_) => const BackupPage());
+          case '/hapus-data-lama':
+            return MaterialPageRoute(builder: (_) => const HapusDataLamaPage());
+          default:
+            return null;
+        }
       },
     );
   }

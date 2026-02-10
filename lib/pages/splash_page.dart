@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
 
 class SplashPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
@@ -16,13 +15,10 @@ class _SplashPageState extends State<SplashPage> {
     super.initState();
 
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
+      // ✅ Gunakan route bawaan, bukan langsung MaterialPageRoute
+      Navigator.pushReplacementNamed(
         context,
-        MaterialPageRoute(
-          builder: (_) => LoginPage(
-            onThemeChanged: widget.onThemeChanged,
-          ),
-        ),
+        '/login',
       );
     });
   }

@@ -14,8 +14,11 @@ class _StatistikPageState extends State<StatistikPage> {
   int totalData = 0;
   int totalLaki = 0;
   int totalPerempuan = 0;
+  int totalHidup = 0;
+  int totalMeninggal = 0;
 
   List<Jenazah> data = [];
+  Map<String, int> korbanPerTanggal = {}; // ✅ Tambahan untuk line chart
 
   @override
   void initState() {
@@ -31,10 +34,23 @@ class _StatistikPageState extends State<StatistikPage> {
 
     int laki = 0;
     int perempuan = 0;
+    int hidup = 0;
+    int meninggal = 0;
+    final Map<String, int> perTanggal = {};
 
     for (var j in list) {
       laki += j.jumlahLaki;
       perempuan += j.jumlahPerempuan;
+
+      if (j.statusKorban == 'Hidup') {
+        hidup += j.jumlahLaki + j.jumlahPerempuan;
+      } else {
+        meninggal += j.jumlahLaki + j.jumlahPerempuan;
+      }
+
+      // Hitung jumlah korban per tanggal
+      perTanggal[j.tanggalPenemuan] =
+          (perTanggal[j.tanggalPenemuan] ?? 0) + j.jumlahLaki + j.jumlahPerempuan;
     }
 
     setState(() {
@@ -42,6 +58,9 @@ class _StatistikPageState extends State<StatistikPage> {
       totalData = list.length;
       totalLaki = laki;
       totalPerempuan = perempuan;
+      totalHidup = hidup;
+      totalMeninggal = meninggal;
+      korbanPerTanggal = perTanggal;
     });
   }
 
@@ -63,13 +82,18 @@ class _StatistikPageState extends State<StatistikPage> {
             const SizedBox(height: 24),
             _buildGenderChart(),
             const SizedBox(height: 24),
+            _buildStatusChart(),
+            const SizedBox(height: 24),
             _buildDailyChart(),
+            const SizedBox(height: 24),
+            _buildLineChart(), // ✅ Tambahan line chart tren waktu
           ],
         ),
       ),
     );
   }
 
+  // ================= SUMMARY CARD =================
   Widget _buildSummaryCard() {
     return Row(
       children: [
@@ -147,12 +171,8 @@ class _StatistikPageState extends State<StatistikPage> {
       ),
     );
   }
-
-  // ================= PIE CHART =================
-
+  // ================= PIE CHART GENDER =================
   Widget _buildGenderChart() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return _buildCard(
       title: 'Komposisi Jenazah',
       child: SizedBox(
@@ -189,11 +209,47 @@ class _StatistikPageState extends State<StatistikPage> {
     );
   }
 
-  // ================= BAR CHART =================
+  // ================= PIE CHART STATUS =================
+  Widget _buildStatusChart() {
+    return _buildCard(
+      title: 'Status Korban',
+      child: SizedBox(
+        height: 220,
+        child: PieChart(
+          PieChartData(
+            sectionsSpace: 4,
+            centerSpaceRadius: 40,
+            sections: [
+              PieChartSectionData(
+                value: totalHidup.toDouble(),
+                title: 'Hidup',
+                color: Colors.green,
+                radius: 60,
+                titleStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              PieChartSectionData(
+                value: totalMeninggal.toDouble(),
+                title: 'Meninggal',
+                color: Colors.grey,
+                radius: 60,
+                titleStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
+  // ================= BAR CHART =================
   Widget _buildDailyChart() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return _buildCard(
       title: 'Data Per Entri',
@@ -264,8 +320,78 @@ class _StatistikPageState extends State<StatistikPage> {
     );
   }
 
-  // ================= CARD WRAPPER =================
+  // ================= LINE CHART =================
+  Widget _buildLineChart() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final entries = korbanPerTanggal.entries.toList();
 
+    return _buildCard(
+      title: 'Tren Korban per Tanggal',
+      child: SizedBox(
+        height: 260,
+        child: LineChart(
+          LineChartData(
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(entries.length, (i) {
+                  return FlSpot(i.toDouble(), entries[i].value.toDouble());
+                }),
+                isCurved: true,
+                color: colorScheme.primary,
+                barWidth: 3,
+                dotData: FlDotData(show: true),
+              ),
+            ],
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toInt().toString(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: colorScheme.onSurface,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+                    if (index >= 0 && index < entries.length) {
+                      return Text(
+                        entries[index].key,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colorScheme.onSurface,
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (value) => FlLine(
+                color: colorScheme.onSurface.withOpacity(0.15),
+                strokeWidth: 1,
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ================= CARD WRAPPER =================
   Widget _buildCard({
     required String title,
     required Widget child,

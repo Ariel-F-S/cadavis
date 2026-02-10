@@ -348,9 +348,10 @@ class _LaporanPageState extends State<LaporanPage> {
         ex.TextCellValue('Total'),
         ex.TextCellValue('Lokasi'),
         ex.TextCellValue('Koordinat GPS'),
+        ex.TextCellValue('Status Korban'),
       ]);
 
-      for (int i = 0; i < 9; i++) {
+      for (int i = 0; i < 10; i++) {
         var cell = sheet.cell(
           ex.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
         );
@@ -373,6 +374,7 @@ class _LaporanPageState extends State<LaporanPage> {
           ex.IntCellValue(j.jumlahLaki + j.jumlahPerempuan),
           ex.TextCellValue(j.lokasiPenemuan),
           ex.TextCellValue(j.koordinatGPS ?? '-'),
+          ex.TextCellValue(j.statusKorban),
         ]);
         no++;
       }
