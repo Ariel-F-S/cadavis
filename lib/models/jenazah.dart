@@ -98,7 +98,7 @@ class Jenazah {
       koordinatGPS: map['koordinat_gps'],
       gambarPath: map['gambar_path'],
       gambarLokasiPath: map['gambar_lokasi_path'],
-      statusKorban: map['status_korban'] ?? 'Meninggal', // ✅ Default jika null
+      statusKorban: map['status_korban'] ?? 'Meninggal', 
     );
   }
 }

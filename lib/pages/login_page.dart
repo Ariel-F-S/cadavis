@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../db/database_helper.dart';
-import '../models/user.dart';
 
 class LoginPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
@@ -21,6 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   Future<void> login() async {
+    // ✅ Validasi input kosong
     if (_user.text.trim().isEmpty || _pass.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -36,32 +36,45 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
     });
 
-    final user = await DatabaseHelper.instance.getUser(
-      _user.text.trim(),
-      _pass.text.trim(),
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (user != null) {
-      // ✅ Gunakan route bawaan dengan arguments
-      Navigator.pushReplacementNamed(
-        context,
-        '/dashboard',
-        arguments: {'role': user.role},
+    try {
+      final user = await DatabaseHelper.instance.getUser(
+        _user.text.trim(),
+        _pass.text.trim(),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Username atau Password salah',
-            style: TextStyle(fontWeight: FontWeight.w500),
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (user != null) {
+        // ✅ Gunakan route bawaan dengan arguments
+        Navigator.pushReplacementNamed(
+          context,
+          '/dashboard',
+          arguments: {'role': user.role},
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Username atau Password salah',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 2),
           ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi error: $e'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
         ),
       );
     }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-// ✅ Tambahan import untuk reset database
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -16,7 +15,7 @@ import 'pages/riwayat_page.dart';
 import 'pages/kelola_data_page.dart';
 import 'pages/backup_page.dart';
 import 'pages/hapus_data_lama_page.dart';
-
+import 'pages/daftar_korban_hilang.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
@@ -71,7 +70,6 @@ class _CadavisAppState extends State<CadavisApp> {
 
       initialRoute: '/login',
 
-      // ✅ Gunakan onGenerateRoute agar bisa kirim argumen (role)
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/splash':
@@ -105,6 +103,8 @@ class _CadavisAppState extends State<CadavisApp> {
             return MaterialPageRoute(builder: (_) => const BackupPage());
           case '/hapus-data-lama':
             return MaterialPageRoute(builder: (_) => const HapusDataLamaPage());
+           case '/korban-hilang':
+            return MaterialPageRoute(builder: (_) => const DaftarKorbanHilangPage());
           default:
             return null;
         }

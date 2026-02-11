@@ -607,7 +607,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
               ),
               const SizedBox(height: 12),
 
-              // ✅ TAMBAHAN: Status Korban (Hidup/Meninggal)
+              // Status Korban (Hidup/Meninggal)
               Card(
                 color: isDark 
                     ? const Color(0xFF1E1E1E) 

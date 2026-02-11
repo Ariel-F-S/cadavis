@@ -5,10 +5,11 @@ import 'input_page.dart';
 import 'laporan_page.dart';
 import 'backup_page.dart';
 import 'hapus_data_lama_page.dart';
+import 'daftar_korban_hilang.dart'; // ✅ Tambahan import
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
-  final String role; // ✅ Tambahan role
+  final String role;
 
   const DashboardPage({
     super.key,
@@ -46,18 +47,17 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   String _getSapaan() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) {
-      return 'Selamat Pagi';
-    } else if (hour < 15) {
-      return 'Selamat Siang';
-    } else if (hour < 18) {
-      return 'Selamat Sore';
-    } else {
-      return 'Selamat Malam';
-    }
-  }
+  final hour = DateTime.now().hour;
+  String waktu;
+  if (hour < 11) waktu = 'Selamat Pagi';
+  else if (hour < 15) waktu = 'Selamat Siang';
+  else if (hour < 18) waktu = 'Selamat Sore';
+  else waktu = 'Selamat Malam';
 
+  return widget.role == 'admin'
+      ? '$waktu pengguna admin'
+      : '$waktu pengguna';
+}
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -66,16 +66,12 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
-          // Toggle Dark Mode
-          Padding(
+        Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Row(
               children: [
-                Icon(
-                  Icons.light_mode,
-                  size: 20,
-                  color: _isDarkMode ? Colors.grey : Colors.amber,
-                ),
+                Icon(Icons.light_mode,
+                    size: 20, color: _isDarkMode ? Colors.grey : Colors.amber),
                 Switch(
                   value: _isDarkMode,
                   onChanged: (value) {
@@ -86,11 +82,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   },
                   activeThumbColor: const Color(0xFF7C4DFF),
                 ),
-                Icon(
-                  Icons.dark_mode,
-                  size: 20,
-                  color: _isDarkMode ? Colors.purple : Colors.grey,
-                ),
+                Icon(Icons.dark_mode,
+                    size: 20,
+                    color: _isDarkMode ? Colors.purple : Colors.grey),
               ],
             ),
           ),
@@ -98,199 +92,171 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header dengan sapaan
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [const Color(0xFF9C7FFF), const Color(0xFF7C4DFF)]
-                          : [const Color(0xFF7C4DFF), const Color(0xFF9C7FFF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF7C4DFF).withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [const Color(0xFF9C7FFF), const Color(0xFF7C4DFF)]
+                        : [const Color(0xFF7C4DFF), const Color(0xFF9C7FFF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${_getSapaan()}, ${widget.role == 'admin' ? 'Admin' : 'Pengguna'}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _namaPetugas,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Cadaver Detection System',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Menu Grid
-                const Text(
-                  'Menu Utama',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.1,
-                  children: [
-                    if (widget.role == 'admin') // ✅ hanya admin bisa input
-                      _buildMenuCard(
-                        icon: Icons.add_circle_outline,
-                        title: 'Input Data',
-                        subtitle: 'Jenazah',
-                        color: const Color(0xFF7C4DFF),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => InputJenazahPage(),
-                            ),
-                          );
-                        },
-                      ),
-                    _buildMenuCard(
-                      icon: Icons.download_outlined,
-                      title: 'Export Data',
-                      subtitle: 'Laporan',
-                      color: const Color(0xFF00BFA5),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LaporanPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: Icons.bar_chart_rounded,
-                      title: 'Statistik',
-                      subtitle: 'Grafik',
-                      color: const Color(0xFFFF6D00),
-                      onTap: () {
-                        Navigator.pushNamed(context, '/statistik');
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: Icons.list_alt_rounded,
-                      title: 'Riwayat',
-                      subtitle: 'Data',
-                      color: const Color(0xFF0091EA),
-                      onTap: () {
-                        Navigator.pushNamed(context, '/riwayat');
-                      },
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C4DFF).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 24),
-
-                // Quick Actions
-                const Text(
-                  'Aksi Cepat',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_getSapaan()}, ${widget.role == 'admin' ? 'Admin' : 'Pengguna'}',
+                      style: const TextStyle(
+                          color: Colors.white70, fontSize: 16),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _namaPetugas,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Cadaver Detection System',
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.9), fontSize: 14),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+              ),
+              const SizedBox(height: 32),
+              const Text('Menu Utama',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
 
-                _buildQuickActionCard(
-                  icon: Icons.manage_accounts_rounded,
-                  title: 'Kelola Data',
-                  subtitle: 'Edit & hapus data jenazah',
+              GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.1,
+              children: [
+                // ✅ Input Jenazah untuk semua role
+                _buildMenuCard(
+                  icon: Icons.add_circle_outline,
+                  title: 'Input Data',
+                  subtitle: 'Jenazah',
+                  color: const Color(0xFF7C4DFF),
                   onTap: () {
-                    Navigator.pushNamed(context, '/kelola');
+                    Navigator.pushNamed(context, '/input');
                   },
                 ),
-
-                const SizedBox(height: 12),
-
-                _buildQuickActionCard(
-                  icon: Icons.backup_outlined,
-                  title: 'Backup Data',
-                  subtitle: 'Cadangkan semua data ke file',
+                _buildMenuCard(
+                  icon: Icons.download_outlined,
+                  title: 'Export Data',
+                  subtitle: 'Laporan',
+                  color: const Color(0xFF00BFA5),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const BackupPage()),
-                    );
+                    Navigator.pushNamed(context, '/laporan');
                   },
                 ),
-
-                const SizedBox(height: 12),
-
-                _buildQuickActionCard(
-                  icon: Icons.delete_sweep_outlined,
-                  title: 'Hapus Data Lama',
-                  subtitle: 'Bersihkan data lebih dari 1 tahun',
-                  color: Colors.orange,
+                _buildMenuCard(
+                  icon: Icons.bar_chart_rounded,
+                  title: 'Statistik',
+                  subtitle: 'Grafik',
+                  color: const Color(0xFFFF6D00),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const HapusDataLamaPage()),
-                    );
+                    Navigator.pushNamed(context, '/statistik');
                   },
                 ),
-
-                const SizedBox(height: 12),
-
-                _buildQuickActionCard(
-                  icon: Icons.logout,
-                  title: 'Keluar',
-                  subtitle: 'Logout dari aplikasi',
-                  color: Colors.red,
+                _buildMenuCard(
+                  icon: Icons.list_alt_rounded,
+                  title: 'Riwayat',
+                  subtitle: 'Data',
+                  color: const Color(0xFF0091EA),
                   onTap: () {
-                    _showLogoutDialog();
+                    Navigator.pushNamed(context, '/riwayat');
                   },
                 ),
-
-                const SizedBox(height: 20),
+                // ✅ Korban Hilang untuk semua role
+               _buildMenuCard(
+                icon: Icons.people_alt,
+                title: 'Korban Hilang',
+                subtitle: 'Foto, ciri fisik, rumah',
+                color: const Color(0xFFE91E63),
+                onTap: () {
+                  if (widget.role == 'admin') {
+                    Navigator.pushNamed(context, '/menu-korban-hilang');
+                  } else {
+                    Navigator.pushNamed(context, '/daftar-korban-hilang',
+                        arguments: {'role': widget.role});
+                  }
+                },
+              ),
               ],
             ),
+              const SizedBox(height: 24),
+              const Text('Aksi Cepat',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+
+              _buildQuickActionCard(
+                icon: Icons.manage_accounts_rounded,
+                title: 'Kelola Data',
+                subtitle: 'Edit & hapus data jenazah',
+                onTap: () {
+                  Navigator.pushNamed(context, '/kelola');
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildQuickActionCard(
+                icon: Icons.backup_outlined,
+                title: 'Backup Data',
+                subtitle: 'Cadangkan semua data ke file',
+                onTap: () {
+                  Navigator.pushNamed(context, '/backup');
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildQuickActionCard(
+                icon: Icons.delete_sweep_outlined,
+                title: 'Hapus Data Lama',
+                subtitle: 'Bersihkan data lebih dari 1 tahun',
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.pushNamed(context, '/hapus-data-lama');
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildQuickActionCard(
+                icon: Icons.logout,
+                title: 'Keluar',
+                subtitle: 'Logout dari aplikasi',
+                color: Colors.red,
+                onTap: () {
+                  _showLogoutDialog();
+                },
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-
-  // ================== Helper Widgets ==================
-  Widget _buildMenuCard({
+Widget _buildMenuCard({
     required IconData icon,
     required String title,
     required String subtitle,
@@ -298,8 +264,7 @@ class _DashboardPageState extends State<DashboardPage> {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return InkWell(
+return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -325,23 +290,28 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               child: Icon(icon, size: 32, color: color),
             ),
-            const SizedBox(height: 12),
+                        const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildQuickActionCard({
+Widget _buildQuickActionCard({
     required IconData icon,
     required String title,
     required String subtitle,

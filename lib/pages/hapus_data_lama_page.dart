@@ -17,41 +17,69 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
   int _oldDataCount = 0;
   List<Jenazah> _oldData = [];
 
+  DateTime? _startDate;
+  DateTime? _endDate;
+
   @override
   void initState() {
     super.initState();
     _loadData();
   }
 
+  Future<void> _pickDateRange() async {
+    final pickedStart = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(), // langsung hari ini 
+      firstDate: DateTime(2000), // batas paling awal 
+      lastDate: DateTime.now(), // batas paling akhir 
+      );
+
+    if (pickedStart == null) return;
+
+    final pickedEnd = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: pickedStart,
+      lastDate: DateTime.now(),
+    );
+
+    if (pickedEnd == null) return;
+
+    setState(() {
+      _startDate = pickedStart;
+      _endDate = pickedEnd;
+    });
+
+    _loadData();
+  }
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final allData = await DatabaseHelper.instance.getAllJenazah();
-      final oneYearAgo = DateTime.now().subtract(const Duration(days: 365));
+    final allData = await DatabaseHelper.instance.getAllJenazah();
 
       final oldData = allData.where((jenazah) {
         try {
           DateTime jenazahDate;
-          
-          if (jenazah.tanggalPenemuan.contains('/')) {
-            final dateParts = jenazah.tanggalPenemuan.split('/');
+            if (jenazah.tanggalPenemuan.contains('/')) {
+            final parts = jenazah.tanggalPenemuan.split('/');
             jenazahDate = DateTime(
-              int.parse(dateParts[2]),
-              int.parse(dateParts[1]),
-              int.parse(dateParts[0]),
+              int.parse(parts[2]),
+              int.parse(parts[1]),
+              int.parse(parts[0]),
             );
-          } else if (jenazah.tanggalPenemuan.contains('-')) {
-            jenazahDate = DateTime.parse(jenazah.tanggalPenemuan);
           } else {
-            return false;
+            jenazahDate = DateTime.parse(jenazah.tanggalPenemuan);
           }
 
-          return jenazahDate.isBefore(oneYearAgo);
-        } catch (e) {
-          debugPrint('Error parsing date: ${jenazah.tanggalPenemuan}');
+          if (_startDate != null && _endDate != null) {
+            return jenazahDate.isAfter(_startDate!) &&
+                   jenazahDate.isBefore(_endDate!);
+          }
+          return false;
+        } catch (_) {
           return false;
         }
       }).toList();
@@ -70,10 +98,7 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -83,20 +108,19 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
     if (_oldDataCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✓ Tidak ada data lama yang perlu dihapus'),
+          content: Text('✓ Tidak ada data dalam rentang yang dipilih'),
           backgroundColor: Colors.green,
         ),
       );
       return;
     }
 
-    // Konfirmasi
-    final confirm = await showDialog<bool>(
+      final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('⚠️ Konfirmasi Hapus'),
         content: Text(
-          'Anda akan menghapus $_oldDataCount data yang lebih dari 1 tahun.\n\n'
+          'Anda akan menghapus $_oldDataCount data dalam rentang tanggal.\n\n'
           '⚠️ AKSI INI TIDAK DAPAT DIBATALKAN!\n\n'
           'Pastikan Anda sudah melakukan backup data sebelumnya.\n\n'
           'Lanjutkan?',
@@ -126,8 +150,7 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
 
     try {
       int deletedCount = 0;
-      
-      for (var jenazah in _oldData) {
+        for (var jenazah in _oldData) {
         if (jenazah.id != null) {
           await DatabaseHelper.instance.deleteJenazah(jenazah.id!);
           deletedCount++;
@@ -138,23 +161,12 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✓ Berhasil menghapus $deletedCount data lama'),
+          content: Text('✓ Berhasil menghapus $deletedCount data'),
           backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
+          ),
       );
 
-      // Reload data
-      await _loadData();
-
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✗ Gagal menghapus data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    await _loadData();
     } finally {
       if (mounted) {
         setState(() {
@@ -163,17 +175,12 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hapus Data Lama'),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-      ),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -198,7 +205,7 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                     const SizedBox(height: 32),
                     
                     const Text(
-                      'Hapus Data Lama',
+                      'Hapus Data Berdasarkan Rentang',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -209,7 +216,7 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                     const SizedBox(height: 12),
                     
                     Text(
-                      'Hapus data jenazah yang lebih dari 1 tahun\nuntuk menghemat ruang penyimpanan',
+                      'Pilih rentang tanggal untuk menghapus data jenazah\nagar penyimpanan lebih efisien',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -219,6 +226,50 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                     
                     const SizedBox(height: 32),
 
+                    if (_startDate != null && _endDate != null)
+                      Text(
+                        'Rentang: ${_startDate!.toLocal()} - ${_endDate!.toLocal()}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+
+                    const SizedBox(height: 24),
+                    // tanggal picker
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Hapus Data Berdasarkan Rentang Tanggal',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.date_range),
+                          label: const Text('Pilih Rentang Tanggal'),
+                          onPressed: _pickDateRange,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_startDate != null && _endDate != null)
+                          Text(
+                            'Rentang: ${_startDate!.toLocal()} - ${_endDate!.toLocal()}',
+                            textAlign: TextAlign.center,
+                          ),
+                        const SizedBox(height: 24),
+                        // lanjut ke statistik, list data, tombol hapus, dll
+                      ],
+                    ),
                     // Statistik
                     Row(
                       children: [
@@ -233,11 +284,8 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                             ),
                             child: Column(
                               children: [
-                                const Icon(
-                                  Icons.inventory_2_outlined,
-                                  color: Colors.blue,
-                                  size: 32,
-                                ),
+                                const Icon(Icons.inventory_2_outlined,
+                                    color: Colors.blue, size: 32),
                                 const SizedBox(height: 8),
                                 Text(
                                   '$_totalData',
@@ -247,17 +295,13 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                                     color: Colors.blue,
                                   ),
                                 ),
-                                const Text(
-                                  'Total Data',
-                                  style: TextStyle(fontSize: 12),
-                                ),
+                                const Text('Total Data',
+                                    style: TextStyle(fontSize: 12)),
                               ],
                             ),
                           ),
                         ),
-                        
                         const SizedBox(width: 16),
-                        
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.all(16),
@@ -273,11 +317,8 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                             ),
                             child: Column(
                               children: [
-                                const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                  size: 32,
-                                ),
+                                const Icon(Icons.delete_outline,
+                                    color: Colors.red, size: 32),
                                 const SizedBox(height: 8),
                                 Text(
                                   '$_oldDataCount',
@@ -287,10 +328,8 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                                     color: Colors.red,
                                   ),
                                 ),
-                                const Text(
-                                  'Data > 1 Tahun',
-                                  style: TextStyle(fontSize: 12),
-                                ),
+                                const Text('Data dalam rentang',
+                                    style: TextStyle(fontSize: 12)),
                               ],
                             ),
                           ),
@@ -299,7 +338,6 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                     ),
                     
                     const SizedBox(height: 24),
-
                     // List data lama
                     if (_oldDataCount > 0) ...[
                       const Text(
@@ -380,8 +418,8 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                           _isDeleting 
                               ? 'MENGHAPUS...' 
                               : _oldDataCount > 0
-                                  ? 'HAPUS DATA LAMA'
-                                  : 'TIDAK ADA DATA LAMA',
+                                  ? 'HAPUS DATA RENTANG'
+                                  : 'TIDAK ADA DATA',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -438,7 +476,7 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                                 Text(
                                   '• Data yang dihapus TIDAK DAPAT dikembalikan\n'
                                   '• Pastikan sudah backup data sebelumnya\n'
-                                  '• Data yang dihapus: lebih dari 1 tahun (365 hari)\n'
+                                  '• Data yang dihapus: sesuai rentang tanggal yang dipilih\n'
                                   '• Gunakan fitur ini secara berkala untuk maintenance\n'
                                   '• Hubungi admin jika ragu',
                                   style: TextStyle(
