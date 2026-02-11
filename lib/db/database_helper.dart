@@ -66,6 +66,8 @@ class DatabaseHelper {
         koordinat_gps TEXT,
         gambar_path TEXT,
         gambar_lokasi_path TEXT
+        status_korban TEXT,
+        kondisi_korban TEXT,
       )
     ''');
 
