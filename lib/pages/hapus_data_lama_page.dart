@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '../db/database_helper.dart';
 import '../models/jenazah.dart';
@@ -14,43 +16,60 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
   bool _isLoading = false;
   bool _isDeleting = false;
   int _totalData = 0;
-  int _oldDataCount = 0;
-  List<Jenazah> _oldData = [];
+  int _filteredCount = 0;
+  List<Jenazah> _filteredData = [];
 
-  DateTime? _startDate;
-  DateTime? _endDate;
+  DateTime? _selectedStartDate;
+  DateTime? _selectedEndDate;
 
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('id_ID', null);
     _loadData();
   }
 
-  Future<void> _pickDateRange() async {
-    final pickedStart = await showDatePicker(
+  Future<void> _pickStartDate() async {
+    final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(), // langsung hari ini 
-      firstDate: DateTime(2000), // batas paling awal 
-      lastDate: DateTime.now(), // batas paling akhir 
-      );
-
-    if (pickedStart == null) return;
-
-    final pickedEnd = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: pickedStart,
+      initialDate: _selectedStartDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
+    if (picked != null) {
+      setState(() {
+        _selectedStartDate = picked;
+        if (_selectedEndDate != null && _selectedEndDate!.isBefore(picked)) {
+          _selectedEndDate = null;
+        }
+      });
+      _loadData();
+    }
+  }
 
-    if (pickedEnd == null) return;
+  Future<void> _pickEndDate() async {
+    if (_selectedStartDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Pilih tanggal mulai terlebih dahulu'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    setState(() {
-      _startDate = pickedStart;
-      _endDate = pickedEnd;
-    });
-
-    _loadData();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedEndDate ?? _selectedStartDate ?? DateTime.now(),
+      firstDate: _selectedStartDate!,
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedEndDate = picked;
+      });
+      _loadData();
+    }
   }
   Future<void> _loadData() async {
     setState(() {
@@ -58,12 +77,12 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
     });
 
     try {
-    final allData = await DatabaseHelper.instance.getAllJenazah();
+      final allData = await DatabaseHelper.instance.getAllJenazah();
 
-      final oldData = allData.where((jenazah) {
+      final filtered = allData.where((jenazah) {
         try {
           DateTime jenazahDate;
-            if (jenazah.tanggalPenemuan.contains('/')) {
+          if (jenazah.tanggalPenemuan.contains('/')) {
             final parts = jenazah.tanggalPenemuan.split('/');
             jenazahDate = DateTime(
               int.parse(parts[2]),
@@ -74,11 +93,17 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
             jenazahDate = DateTime.parse(jenazah.tanggalPenemuan);
           }
 
-          if (_startDate != null && _endDate != null) {
-            return jenazahDate.isAfter(_startDate!) &&
-                   jenazahDate.isBefore(_endDate!);
+          if (_selectedStartDate != null) {
+            final startDateOnly = DateTime(_selectedStartDate!.year, _selectedStartDate!.month, _selectedStartDate!.day);
+            if (jenazahDate.isBefore(startDateOnly)) return false;
           }
-          return false;
+
+          if (_selectedEndDate != null) {
+            final endDateOnly = DateTime(_selectedEndDate!.year, _selectedEndDate!.month, _selectedEndDate!.day);
+            if (jenazahDate.isAfter(endDateOnly)) return false;
+          }
+
+          return true;
         } catch (_) {
           return false;
         }
@@ -87,8 +112,8 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
       if (mounted) {
         setState(() {
           _totalData = allData.length;
-          _oldDataCount = oldData.length;
-          _oldData = oldData;
+          _filteredCount = filtered.length;
+          _filteredData = filtered;
           _isLoading = false;
         });
       }
@@ -104,8 +129,8 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
     }
   }
 
-  Future<void> _deleteOldData() async {
-    if (_oldDataCount == 0) {
+  Future<void> _deleteFilteredData() async {
+    if (_filteredCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('✓ Tidak ada data dalam rentang yang dipilih'),
@@ -115,12 +140,12 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
       return;
     }
 
-      final confirm = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('⚠️ Konfirmasi Hapus'),
         content: Text(
-          'Anda akan menghapus $_oldDataCount data dalam rentang tanggal.\n\n'
+          'Anda akan menghapus $_filteredCount data dalam rentang tanggal.\n\n'
           '⚠️ AKSI INI TIDAK DAPAT DIBATALKAN!\n\n'
           'Pastikan Anda sudah melakukan backup data sebelumnya.\n\n'
           'Lanjutkan?',
@@ -150,7 +175,7 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
 
     try {
       int deletedCount = 0;
-        for (var jenazah in _oldData) {
+      for (var jenazah in _filteredData) {
         if (jenazah.id != null) {
           await DatabaseHelper.instance.deleteJenazah(jenazah.id!);
           deletedCount++;
@@ -163,10 +188,10 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
         SnackBar(
           content: Text('✓ Berhasil menghapus $deletedCount data'),
           backgroundColor: Colors.green,
-          ),
+        ),
       );
 
-    await _loadData();
+      await _loadData();
     } finally {
       if (mounted) {
         setState(() {
@@ -178,18 +203,23 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('dd MMMM yyyy', 'id_ID');
 
     return Scaffold(
-
+      appBar: AppBar(
+        title: const Text('Hapus Data Lama'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
                         color: Colors.orange.withOpacity(0.1),
@@ -201,297 +231,84 @@ class _HapusDataLamaPageState extends State<HapusDataLamaPage> {
                         color: Colors.orange,
                       ),
                     ),
-                    
-                    const SizedBox(height: 32),
-                    
-                    const Text(
-                      'Hapus Data Berdasarkan Rentang',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Hapus Data Berdasarkan Rentang Tanggal',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    Text(
-                      'Pilih rentang tanggal untuk menghapus data jenazah\nagar penyimpanan lebih efisien',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                      textAlign: TextAlign.center,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Pilih rentang tanggal untuk menghapus data jenazah\nagar penyimpanan lebih efisien',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
-                    
-                    const SizedBox(height: 32),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
 
-                    if (_startDate != null && _endDate != null)
-                      Text(
-                        'Rentang: ${_startDate!.toLocal()} - ${_endDate!.toLocal()}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white70 : Colors.black87,
-                        ),
-                      ),
-
-                    const SizedBox(height: 24),
-                    // tanggal picker
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Text(
-                          'Hapus Data Berdasarkan Rentang Tanggal',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.date_range),
-                          label: const Text('Pilih Rentang Tanggal'),
-                          onPressed: _pickDateRange,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        if (_startDate != null && _endDate != null)
-                          Text(
-                            'Rentang: ${_startDate!.toLocal()} - ${_endDate!.toLocal()}',
-                            textAlign: TextAlign.center,
-                          ),
-                        const SizedBox(height: 24),
-                        // lanjut ke statistik, list data, tombol hapus, dll
-                      ],
-                    ),
-                    // Statistik
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark 
-                                  ? const Color(0xFF1E1E1E) 
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              children: [
-                                const Icon(Icons.inventory_2_outlined,
-                                    color: Colors.blue, size: 32),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '$_totalData',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                                const Text('Total Data',
-                                    style: TextStyle(fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark 
-                                  ? const Color(0xFF1E1E1E) 
-                                  : Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.red.withOpacity(0.3),
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                const Icon(Icons.delete_outline,
-                                    color: Colors.red, size: 32),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '$_oldDataCount',
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                const Text('Data dalam rentang',
-                                    style: TextStyle(fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    // List data lama
-                    if (_oldDataCount > 0) ...[
-                      const Text(
-                        'Data yang akan dihapus:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 200),
-                        decoration: BoxDecoration(
-                          color: isDark 
-                              ? const Color(0xFF1E1E1E) 
-                              : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: _oldData.length > 5 ? 5 : _oldData.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final jenazah = _oldData[index];
-                            return ListTile(
-                              dense: true,
-                              leading: const Icon(Icons.calendar_today, size: 16),
-                              title: Text(
-                                jenazah.namaPetugas,
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                              subtitle: Text(
-                                jenazah.tanggalPenemuan,
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                              trailing: Text(
-                                '${jenazah.jumlahLaki + jenazah.jumlahPerempuan}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      if (_oldData.length > 5)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            '... dan ${_oldData.length - 5} data lainnya',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      const SizedBox(height: 24),
-                    ],
-                    
-                    // Button Hapus
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isDeleting ? null : _deleteOldData,
-                        icon: _isDeleting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.delete_sweep, size: 24),
-                        label: Text(
-                          _isDeleting 
-                              ? 'MENGHAPUS...' 
-                              : _oldDataCount > 0
-                                  ? 'HAPUS DATA RENTANG'
-                                  : 'TIDAK ADA DATA',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          backgroundColor: _oldDataCount > 0 ? Colors.orange : Colors.grey,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Info
-                    Container(
+                  // Filter tanggal
+                  InkWell(
+                    onTap: _pickStartDate,
+                    child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark 
-                            ? const Color(0xFF1E1E1E) 
-                            : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.red.withOpacity(0.3),
+                          color: _selectedStartDate != null ? Colors.orange : Colors.grey.shade300,
+                          width: 2,
                         ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Peringatan:',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '• Data yang dihapus TIDAK DAPAT dikembalikan\n'
-                                  '• Pastikan sudah backup data sebelumnya\n'
-                                  '• Data yang dihapus: sesuai rentang tanggal yang dipilih\n'
-                                  '• Gunakan fitur ini secara berkala untuk maintenance\n'
-                                  '• Hubungi admin jika ragu',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isDark ? Colors.white70 : Colors.black87,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        _selectedStartDate != null
+                            ? 'Tanggal Mulai: ${dateFormat.format(_selectedStartDate!)}'
+                            : 'Pilih Tanggal Mulai',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: _pickEndDate,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _selectedEndDate != null ? Colors.orange : Colors.grey.shade300,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _selectedEndDate != null
+                            ? 'Tanggal Akhir: ${dateFormat.format(_selectedEndDate!)}'
+                            : 'Pilih Tanggal Akhir (Opsional)',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  Text('Total Data: $_totalData'),
+                  Text('Data dalam rentang: $_filteredCount'),
+                  const SizedBox(height: 24),
+
+                  if (_filteredCount > 0)
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.delete),
+                      label: Text(_isDeleting ? 'Menghapus...' : 'Hapus Data Rentang'),
+                      onPressed: _isDeleting ? null : _deleteFilteredData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                ],
               ),
             ),
     );
