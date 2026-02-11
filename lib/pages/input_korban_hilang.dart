@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../db/database_helper.dart';
 import '../models/korban_hilang.dart';
@@ -16,10 +18,11 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
   final _lokasiController = TextEditingController();
   final _ciriFisikController = TextEditingController();
   final _alamatController = TextEditingController();
+  final _teleponController = TextEditingController();
 
   String? _selectedGender;
   DateTime? _selectedDate;
-
+  File? _selectedImage;
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -34,8 +37,24 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
   Future<void> _simpanData() async {
     if (_formKey.currentState!.validate()) {
+      if (_selectedImage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Foto korban wajib diupload")),
+        );
+        return;
+      }
+
       final korban = KorbanHilang(
         nama: _namaController.text,
         jenisKelamin: _selectedGender ?? "-",
@@ -45,9 +64,10 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
         lokasi: _lokasiController.text,
         ciriFisik: _ciriFisikController.text,
         alamatRumah: _alamatController.text,
+        nomorTelepon: _teleponController.text,
         status: "Belum ditemukan", // default
         kondisi: "", // default kosong
-        fotoPath: "",
+        fotoPath: _selectedImage!.path,
       );
 
       await DatabaseHelper.instance.insertKorbanHilang(korban);
@@ -59,8 +79,7 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
       Navigator.pop(context);
     }
   }
-
-  @override
+@override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -81,6 +100,31 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
               key: _formKey,
               child: ListView(
                 children: [
+                  // Foto korban
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 180,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400, width: 2),
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.grey.shade100,
+                      ),
+                      child: _selectedImage != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                _selectedImage!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            )
+                          : const Center(
+                              child: Text("Upload Foto Korban"),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _namaController,
                     decoration: const InputDecoration(
@@ -133,15 +177,17 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
                       labelText: "Lokasi Hilang",
                       prefixIcon: Icon(Icons.location_on),
                     ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
                   ),
                   const SizedBox(height: 12),
 
                   TextFormField(
                     controller: _ciriFisikController,
                     decoration: const InputDecoration(
-                      labelText: "Ciri Fisik",
+                      labelText: "Ciri Fisik (contoh: tato, bekas luka, dll)",
                       prefixIcon: Icon(Icons.accessibility_new),
                     ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
                   ),
                   const SizedBox(height: 12),
 
@@ -151,6 +197,18 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
                       labelText: "Alamat Rumah",
                       prefixIcon: Icon(Icons.home),
                     ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextFormField(
+                    controller: _teleponController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: "Nomor Telepon yang dapat dihubungi",
+                      prefixIcon: Icon(Icons.phone),
+                    ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
                   ),
                   const SizedBox(height: 20),
 

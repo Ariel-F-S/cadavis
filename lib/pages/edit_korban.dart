@@ -34,6 +34,7 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
       fotoPath: widget.korban.fotoPath,
       status: _selectedStatus ?? widget.korban.status,
       kondisi: _selectedKondisi ?? widget.korban.kondisi,
+      nomorTelepon: widget.korban.nomorTelepon,
     );
 
     await DatabaseHelper.instance.updateKorbanHilang(updatedKorban);

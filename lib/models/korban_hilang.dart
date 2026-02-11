@@ -9,6 +9,7 @@ class KorbanHilang {
   final String ciriFisik;
   final String alamatRumah;
   final String fotoPath;
+  final String nomorTelepon;
 
   KorbanHilang({
     this.id,
@@ -21,6 +22,7 @@ class KorbanHilang {
     required this.ciriFisik,
     required this.alamatRumah,
     required this.fotoPath,
+    required this.nomorTelepon,
   });
 
   Map<String, dynamic> toMap() {
@@ -35,6 +37,7 @@ class KorbanHilang {
       'ciri_fisik': ciriFisik,
       'alamat_rumah': alamatRumah,
       'foto_path': fotoPath,
+      'nomor_telepon': nomorTelepon,
     };
   }
 
@@ -50,6 +53,7 @@ class KorbanHilang {
       ciriFisik: map['ciri_fisik'] ?? '',
       alamatRumah: map['alamat_rumah'] ?? '',
       fotoPath: map['foto_path'] ?? '',
+      nomorTelepon: map['nomor_telepon'] ?? '',
     );
   }
 
@@ -64,6 +68,7 @@ class KorbanHilang {
     String? ciriFisik,
     String? alamatRumah,
     String? fotoPath,
+    String? nomorTelepon,
   }) {
     return KorbanHilang(
       id: id ?? this.id,
@@ -76,6 +81,7 @@ class KorbanHilang {
       ciriFisik: ciriFisik ?? this.ciriFisik,
       alamatRumah: alamatRumah ?? this.alamatRumah,
       fotoPath: fotoPath ?? this.fotoPath,
+      nomorTelepon: nomorTelepon ?? this.nomorTelepon,
     );
   }
 }

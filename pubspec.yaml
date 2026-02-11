@@ -1,4 +1,4 @@
-name: cadavis
+name: Cadavis
 description: "Cadaver Detection System"
 publish_to: 'none'
 
@@ -59,9 +59,6 @@ flutter:
     - assets/images.jpg
 
 
-# ============================
-# CONFIG ICON APK
-# ============================
 flutter_icons:
   android: true
   ios: true

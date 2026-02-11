@@ -18,15 +18,16 @@ import 'pages/hapus_data_lama_page.dart';
 import 'pages/daftar_korban_hilang.dart';
 import 'pages/input_korban_hilang.dart';
 import 'pages/menu_korban_hilang.dart';
-import 'pages/edit_korban.dart'; 
+import 'pages/edit_korban.dart';
+import 'pages/detail_korban_hilang.dart';
 
-import 'models/korban_hilang.dart'; 
+import 'models/korban_hilang.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
 
-  // ✅ Reset database lama (hapus cadavis.db)
+
   final dbPath = await getDatabasesPath();
   await deleteDatabase(join(dbPath, 'cadavis.db'));
 
@@ -118,6 +119,13 @@ class _CadavisAppState extends State<CadavisApp> {
             final role = args['role'] ?? 'pengguna';
             return MaterialPageRoute(
               builder: (_) => DaftarKorbanHilangPage(role: role),
+            );
+          case '/detail-korban': 
+            final args = settings.arguments as Map<String, dynamic>? ?? {};
+            final korban = args['korban'] as KorbanHilang;
+            final role = args['role'] ?? 'pengguna';
+            return MaterialPageRoute(
+              builder: (_) => DetailKorbanPage(korban: korban, role: role),
             );
           case '/edit-korban': // edit data korban hilang
             final korban = settings.arguments as KorbanHilang;
