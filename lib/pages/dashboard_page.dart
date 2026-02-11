@@ -55,8 +55,8 @@ class _DashboardPageState extends State<DashboardPage> {
   else waktu = 'Selamat Malam';
 
   return widget.role == 'admin'
-      ? '$waktu pengguna admin'
-      : '$waktu pengguna';
+      ? '$waktu'
+      : '$waktu';
 }
   @override
   Widget build(BuildContext context) {
