@@ -305,7 +305,8 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
         koordinatGPS: _koordinatGPS,
         gambarPath: gambarJenazahPath,
         gambarLokasiPath: gambarLokasiPath,
-        statusKorban: _statusKorban, // ✅ TAMBAHAN: Simpan status korban
+        statusKorban: _statusKorban,
+        kondisiKorban: _statusKorban == 'Hidup' ? 'Hidup' : 'Meninggal',
       );
 
       await DatabaseHelper.instance.insertJenazah(jenazah);

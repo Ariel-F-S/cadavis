@@ -17,7 +17,10 @@ import 'pages/backup_page.dart';
 import 'pages/hapus_data_lama_page.dart';
 import 'pages/daftar_korban_hilang.dart';
 import 'pages/input_korban_hilang.dart';
-import 'pages/menu_korban_hilang.dart'; 
+import 'pages/menu_korban_hilang.dart';
+import 'pages/edit_korban.dart'; 
+
+import 'models/korban_hilang.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -106,16 +109,22 @@ class _CadavisAppState extends State<CadavisApp> {
             return MaterialPageRoute(builder: (_) => const BackupPage());
           case '/hapus-data-lama':
             return MaterialPageRoute(builder: (_) => const HapusDataLamaPage());
-          case '/korban-hilang-input':
+          case '/korban-hilang-input': // input data korban hilang
             return MaterialPageRoute(builder: (_) => const KorbanHilangInputPage());
-          case '/menu-korban-hilang':
+          case '/menu-korban-hilang': // menu korban hilang
             return MaterialPageRoute(builder: (_) => const MenuKorbanHilangPage());
-          case '/daftar-korban-hilang':
+          case '/daftar-korban-hilang': // daftar korban hilang
             final args = settings.arguments as Map<String, dynamic>? ?? {};
             final role = args['role'] ?? 'pengguna';
             return MaterialPageRoute(
               builder: (_) => DaftarKorbanHilangPage(role: role),
             );
+          case '/edit-korban': // edit data korban hilang
+            final korban = settings.arguments as KorbanHilang;
+            return MaterialPageRoute(
+              builder: (_) => EditKorbanPage(korban: korban),
+            );
+
           default:
             return null;
         }

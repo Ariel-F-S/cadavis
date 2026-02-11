@@ -349,6 +349,7 @@ class _LaporanPageState extends State<LaporanPage> {
         ex.TextCellValue('Lokasi'),
         ex.TextCellValue('Koordinat GPS'),
         ex.TextCellValue('Status Korban'),
+        ex.TextCellValue('Kondisi Korban'),
       ]);
 
       for (int i = 0; i < 10; i++) {
@@ -375,6 +376,7 @@ class _LaporanPageState extends State<LaporanPage> {
           ex.TextCellValue(j.lokasiPenemuan),
           ex.TextCellValue(j.koordinatGPS ?? '-'),
           ex.TextCellValue(j.statusKorban),
+          ex.TextCellValue(j.kondisiKorban ?? '-'),
         ]);
         no++;
       }

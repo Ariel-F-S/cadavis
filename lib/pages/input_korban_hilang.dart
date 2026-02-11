@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import '../db/database_helper.dart';
 import '../models/korban_hilang.dart';
 
@@ -14,46 +13,49 @@ class KorbanHilangInputPage extends StatefulWidget {
 class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
-  final _jenisKelaminController = TextEditingController();
-  final _tanggalController = TextEditingController();
   final _lokasiController = TextEditingController();
   final _ciriFisikController = TextEditingController();
   final _alamatController = TextEditingController();
-  final _statusController = TextEditingController();
-  final _kondisiController = TextEditingController();
 
-  String _fotoPath = '';
+  String? _selectedGender;
+  DateTime? _selectedDate;
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
     if (picked != null) {
       setState(() {
-        _fotoPath = picked.path;
+        _selectedDate = picked;
       });
     }
   }
 
-  Future<void> _saveData() async {
+  Future<void> _simpanData() async {
     if (_formKey.currentState!.validate()) {
       final korban = KorbanHilang(
         nama: _namaController.text,
-        jenisKelamin: _jenisKelaminController.text,
-        tanggalHilang: _tanggalController.text,
+        jenisKelamin: _selectedGender ?? "-",
+        tanggalHilang: _selectedDate != null
+            ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
+            : "-",
         lokasi: _lokasiController.text,
-        status: _statusController.text,
-        kondisi: _kondisiController.text,
         ciriFisik: _ciriFisikController.text,
         alamatRumah: _alamatController.text,
-        fotoPath: _fotoPath,
+        status: "Belum ditemukan", // default
+        kondisi: "", // default kosong
+        fotoPath: "",
       );
 
       await DatabaseHelper.instance.insertKorbanHilang(korban);
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✓ Data korban hilang berhasil disimpan')),
+        const SnackBar(content: Text("Data korban hilang berhasil disimpan")),
       );
-
       Navigator.pop(context);
     }
   }
@@ -64,69 +66,110 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Input Data Korban Hilang'),
-        backgroundColor: Colors.orange,
+        title: const Text("Input Korban Hilang"),
+        backgroundColor: const Color(0xFFE91E63),
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _namaController,
-                decoration: const InputDecoration(labelText: 'Nama'),
-                validator: (val) => val!.isEmpty ? 'Nama wajib diisi' : null,
+        padding: const EdgeInsets.all(16),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  TextFormField(
+                    controller: _namaController,
+                    decoration: const InputDecoration(
+                      labelText: "Nama",
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  DropdownButtonFormField<String>(
+                    value: _selectedGender,
+                    items: const [
+                      DropdownMenuItem(value: "Laki-laki", child: Text("Laki-laki")),
+                      DropdownMenuItem(value: "Perempuan", child: Text("Perempuan")),
+                    ],
+                    onChanged: (val) => setState(() => _selectedGender = val),
+                    decoration: const InputDecoration(
+                      labelText: "Jenis Kelamin",
+                      prefixIcon: Icon(Icons.wc),
+                    ),
+                    validator: (val) => val == null ? "Pilih jenis kelamin" : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  InkWell(
+                    onTap: _pickDate,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: "Tanggal Hilang",
+                        prefixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(
+                        _selectedDate != null
+                            ? DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate!)
+                            : "Pilih tanggal",
+                        style: TextStyle(
+                          color: _selectedDate != null
+                              ? (isDark ? Colors.white : Colors.black)
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextFormField(
+                    controller: _lokasiController,
+                    decoration: const InputDecoration(
+                      labelText: "Lokasi Hilang",
+                      prefixIcon: Icon(Icons.location_on),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextFormField(
+                    controller: _ciriFisikController,
+                    decoration: const InputDecoration(
+                      labelText: "Ciri Fisik",
+                      prefixIcon: Icon(Icons.accessibility_new),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextFormField(
+                    controller: _alamatController,
+                    decoration: const InputDecoration(
+                      labelText: "Alamat Rumah",
+                      prefixIcon: Icon(Icons.home),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.save),
+                    label: const Text("Simpan"),
+                    onPressed: _simpanData,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              TextFormField(
-                controller: _jenisKelaminController,
-                decoration: const InputDecoration(labelText: 'Jenis Kelamin'),
-              ),
-              TextFormField(
-                controller: _tanggalController,
-                decoration: const InputDecoration(labelText: 'Tanggal Hilang'),
-              ),
-              TextFormField(
-                controller: _lokasiController,
-                decoration: const InputDecoration(labelText: 'Lokasi'),
-              ),
-              TextFormField(
-                controller: _ciriFisikController,
-                decoration: const InputDecoration(labelText: 'Ciri Fisik'),
-              ),
-              TextFormField(
-                controller: _alamatController,
-                decoration: const InputDecoration(labelText: 'Alamat Rumah'),
-              ),
-              TextFormField(
-                controller: _statusController,
-                decoration: const InputDecoration(labelText: 'Status'),
-              ),
-              TextFormField(
-                controller: _kondisiController,
-                decoration: const InputDecoration(labelText: 'Kondisi'),
-              ),
-              const SizedBox(height: 16),
-              _fotoPath.isEmpty
-                  ? ElevatedButton.icon(
-                      icon: const Icon(Icons.photo),
-                      label: const Text('Pilih Foto'),
-                      onPressed: _pickImage,
-                    )
-                  : Image.file(File(_fotoPath), height: 150),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.save),
-                label: const Text('Simpan Data'),
-                onPressed: _saveData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

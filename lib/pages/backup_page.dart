@@ -181,6 +181,8 @@ class _BackupPageState extends State<BackupPage> {
         ex.TextCellValue('Total'),
         ex.TextCellValue('Lokasi'),
         ex.TextCellValue('Koordinat GPS'),
+        ex.TextCellValue('Status Korban'),
+        ex.TextCellValue('Kondisi Korban'),
       ]);
 
       // Style header
@@ -208,6 +210,8 @@ class _BackupPageState extends State<BackupPage> {
           ex.IntCellValue(j.jumlahLaki + j.jumlahPerempuan),
           ex.TextCellValue(j.lokasiPenemuan),
           ex.TextCellValue(j.koordinatGPS ?? '-'),
+          ex.TextCellValue(j.statusKorban),
+          ex.TextCellValue(j.kondisiKorban ?? '-'),
         ]);
         no++;
       }

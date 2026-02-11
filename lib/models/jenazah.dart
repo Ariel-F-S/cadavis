@@ -11,8 +11,9 @@ class Jenazah {
   final String? koordinatGPS;
   final String? gambarPath;
   final String? gambarLokasiPath;
-  final String statusKorban; // ✅ Tambahan field baru
-
+  final String statusKorban;
+  final String kondisiKorban;
+ 
   Jenazah({
     this.id,
     required this.namaPetugas,
@@ -26,7 +27,8 @@ class Jenazah {
     this.koordinatGPS,
     this.gambarPath,
     this.gambarLokasiPath,
-    required this.statusKorban, // ✅ Wajib diisi
+    required this.statusKorban, 
+    required this.kondisiKorban,
   });
 
   // Helper untuk hitung total
@@ -48,6 +50,7 @@ class Jenazah {
     String? gambarPath,
     String? gambarLokasiPath,
     String? statusKorban,
+    String? kondisiKorban,
   }) {
     return Jenazah(
       id: id ?? this.id,
@@ -63,6 +66,7 @@ class Jenazah {
       gambarPath: gambarPath ?? this.gambarPath,
       gambarLokasiPath: gambarLokasiPath ?? this.gambarLokasiPath,
       statusKorban: statusKorban ?? this.statusKorban,
+      kondisiKorban: kondisiKorban ?? this.kondisiKorban,
     );
   }
 
@@ -81,6 +85,7 @@ class Jenazah {
       'gambar_path': gambarPath,
       'gambar_lokasi_path': gambarLokasiPath,
       'status_korban': statusKorban, // ✅ Tambahan
+      'kondisi_korban': kondisiKorban, // ✅ Tambahan
     };
   }
 
@@ -98,7 +103,8 @@ class Jenazah {
       koordinatGPS: map['koordinat_gps'],
       gambarPath: map['gambar_path'],
       gambarLokasiPath: map['gambar_lokasi_path'],
-      statusKorban: map['status_korban'] ?? 'Meninggal', 
+      statusKorban: map['status_korban'] ?? 'Ditemukan', 
+      kondisiKorban: map['kondisi_korban'] ?? 'Meninggal',
     );
   }
 }
