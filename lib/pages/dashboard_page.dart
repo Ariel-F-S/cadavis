@@ -5,7 +5,7 @@ import 'input_page.dart';
 import 'laporan_page.dart';
 import 'backup_page.dart';
 import 'hapus_data_lama_page.dart';
-import 'daftar_korban_hilang.dart'; // ✅ Tambahan import
+import 'daftar_korban_hilang.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;
@@ -234,7 +234,7 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildQuickActionCard(
                 icon: Icons.delete_sweep_outlined,
                 title: 'Hapus Data Lama',
-                subtitle: 'Bersihkan data lebih dari 1 tahun',
+                subtitle: 'Bersihkan data secara permanen ',
                 color: Colors.orange,
                 onTap: () {
                   Navigator.pushNamed(context, '/hapus-data-lama');

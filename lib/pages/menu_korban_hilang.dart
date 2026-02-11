@@ -10,7 +10,7 @@ class MenuKorbanHilangPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu Korban Hilang'),
-        backgroundColor: Colors.orange,
+        backgroundColor: Color(0xFFE91E63),
         foregroundColor: Colors.white,
       ),
       body: Padding(

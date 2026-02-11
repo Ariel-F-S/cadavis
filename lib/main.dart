@@ -16,7 +16,8 @@ import 'pages/kelola_data_page.dart';
 import 'pages/backup_page.dart';
 import 'pages/hapus_data_lama_page.dart';
 import 'pages/daftar_korban_hilang.dart';
-import 'pages/menu_korban_hilang.dart'; // ✅ Tambahkan import untuk admin
+import 'pages/input_korban_hilang.dart';
+import 'pages/menu_korban_hilang.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -105,9 +106,11 @@ class _CadavisAppState extends State<CadavisApp> {
             return MaterialPageRoute(builder: (_) => const BackupPage());
           case '/hapus-data-lama':
             return MaterialPageRoute(builder: (_) => const HapusDataLamaPage());
-          case '/menu-korban-hilang': // ✅ route untuk admin
+          case '/korban-hilang-input':
+            return MaterialPageRoute(builder: (_) => const KorbanHilangInputPage());
+          case '/menu-korban-hilang':
             return MaterialPageRoute(builder: (_) => const MenuKorbanHilangPage());
-          case '/daftar-korban-hilang': // ✅ route untuk user
+          case '/daftar-korban-hilang':
             final args = settings.arguments as Map<String, dynamic>? ?? {};
             final role = args['role'] ?? 'pengguna';
             return MaterialPageRoute(
