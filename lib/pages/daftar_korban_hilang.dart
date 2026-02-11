@@ -55,50 +55,83 @@ class _DaftarKorbanHilangPageState extends State<DaftarKorbanHilangPage> {
                 return Card(
                   color: cardColor,
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: ListTile(
-                    leading: korban.fotoPath.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              File(korban.fotoPath),
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.cover,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/detail-korban',
+                        arguments: {'korban': korban, 'role': widget.role},
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          // Foto kecil
+                          korban.fotoPath.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(korban.fotoPath),
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : Icon(Icons.person,
+                                  size: 50,
+                                  color: isDark ? Colors.white70 : Colors.grey[700]),
+                          const SizedBox(width: 12),
+
+                          // Info singkat
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  korban.nama,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${korban.jenisKelamin} • Hilang: ${korban.tanggalHilang}\nLokasi: ${korban.lokasi}",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.white60 : Colors.black54,
+                                  ),
+                                ),
+                              ],
                             ),
-                          )
-                        : Icon(Icons.person,
-                            size: 40,
-                            color: isDark ? Colors.white70 : Colors.grey[700]),
-                    title: Text(
-                      korban.nama,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: textColor,
+                          ),
+
+                          // Badge status
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: korban.status == "Sudah ditemukan"
+                                  ? Colors.green
+                                  : Colors.red,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              korban.status,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    subtitle: Text(
-                      '${korban.jenisKelamin} • Hilang: ${korban.tanggalHilang}\n'
-                      'Lokasi: ${korban.lokasi}\n'
-                      'Ciri fisik: ${korban.ciriFisik}\n'
-                      'Alamat: ${korban.alamatRumah}\n'
-                      'Status: ${korban.status}'
-                      '${korban.status == "Sudah ditemukan" ? "\nKondisi: ${korban.kondisi}" : ""}',
-                      style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
-                    ),
-                    isThreeLine: true,
-                    trailing: widget.role == 'admin'
-                        ? IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/edit-korban',
-                                arguments: korban,
-                              );
-                            },
-                          )
-                        : null, // user tidak bisa edit
                   ),
                 );
               },
@@ -110,7 +143,7 @@ class _DaftarKorbanHilangPageState extends State<DaftarKorbanHilangPage> {
               },
               child: const Icon(Icons.add),
             )
-          : null, // user tidak bisa tambah data
+          : null,
     );
   }
 }

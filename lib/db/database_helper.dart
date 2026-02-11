@@ -39,7 +39,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // ✅ Insert default admin & user
+    // Insert default admin & user
     await db.insert('users', {
       'username': 'admin',
       'password': 'admin123',
@@ -51,7 +51,7 @@ class DatabaseHelper {
       'role': 'pengguna',
     });
 
-    // Tabel Jenazah (sinkron dengan form input)
+    // Tabel Jenazah
     await db.execute('''
       CREATE TABLE jenazah (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,12 +65,11 @@ class DatabaseHelper {
         lokasi_penemuan TEXT,
         koordinat_gps TEXT,
         gambar_path TEXT,
-        gambar_lokasi_path TEXT,
-        status_korban TEXT
+        gambar_lokasi_path TEXT
       )
     ''');
 
-    // Tabel Korban Hilang (sinkron dengan model terbaru)
+    // Tabel Korban Hilang
     await db.execute('''
       CREATE TABLE korban_hilang (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +81,8 @@ class DatabaseHelper {
         kondisi TEXT,
         ciri_fisik TEXT,
         alamat_rumah TEXT,
-        foto_path TEXT
+        foto_path TEXT,
+        nomor_telepon TEXT
       )
     ''');
   }
@@ -179,13 +179,13 @@ class DatabaseHelper {
   }
 
   Future<List<KorbanHilang>> getKorbanByDateRange(String start, String end) async {
-  final db = await database;
-  final result = await db.query(
-    'korban_hilang',
-    where: 'tanggal_hilang BETWEEN ? AND ?',
-    whereArgs: [start, end],
-  );
-  return result.map((e) => KorbanHilang.fromMap(e)).toList();
+    final db = await database;
+    final result = await db.query(
+      'korban_hilang',
+      where: 'tanggal_hilang BETWEEN ? AND ?',
+      whereArgs: [start, end],
+    );
+    return result.map((e) => KorbanHilang.fromMap(e)).toList();
   }
 
   // ================== Utility ==================

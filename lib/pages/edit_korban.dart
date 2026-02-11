@@ -32,16 +32,18 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
       ciriFisik: widget.korban.ciriFisik,
       alamatRumah: widget.korban.alamatRumah,
       fotoPath: widget.korban.fotoPath,
-      status: _selectedStatus ?? widget.korban.status,
-      kondisi: _selectedKondisi ?? widget.korban.kondisi,
       nomorTelepon: widget.korban.nomorTelepon,
+      status: _selectedStatus ?? widget.korban.status,
+      kondisi: _selectedStatus == "Sudah ditemukan"
+          ? _selectedKondisi ?? widget.korban.kondisi
+          : "", // kosongkan kondisi kalau belum ditemukan
     );
 
     await DatabaseHelper.instance.updateKorbanHilang(updatedKorban);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Data korban berhasil diperbarui")),
+      const SnackBar(content: Text("Status korban berhasil diperbarui")),
     );
     Navigator.pop(context, updatedKorban);
   }
@@ -52,7 +54,7 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Edit Data Korban"),
+        title: const Text("Update Status Korban"),
         backgroundColor: const Color(0xFFE91E63),
         foregroundColor: Colors.white,
       ),
@@ -65,6 +67,7 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
             padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
+                // Informasi readonly
                 Text(
                   widget.korban.nama,
                   style: TextStyle(
@@ -79,7 +82,8 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
                   "Tanggal Hilang: ${widget.korban.tanggalHilang}\n"
                   "Lokasi: ${widget.korban.lokasi}\n"
                   "Ciri Fisik: ${widget.korban.ciriFisik}\n"
-                  "Alamat: ${widget.korban.alamatRumah}",
+                  "Alamat: ${widget.korban.alamatRumah}\n"
+                  "Nomor Telepon: ${widget.korban.nomorTelepon}",
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white70 : Colors.black87,
@@ -87,6 +91,7 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
                 ),
                 const SizedBox(height: 24),
 
+                // Dropdown status
                 DropdownButtonFormField<String>(
                   value: _selectedStatus,
                   items: const [
@@ -101,18 +106,20 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
                 ),
                 const SizedBox(height: 16),
 
-                DropdownButtonFormField<String>(
-                  value: _selectedKondisi,
-                  items: const [
-                    DropdownMenuItem(value: "Masih hidup", child: Text("Masih hidup")),
-                    DropdownMenuItem(value: "Meninggal", child: Text("Meninggal")),
-                  ],
-                  onChanged: (val) => setState(() => _selectedKondisi = val),
-                  decoration: const InputDecoration(
-                    labelText: "Kondisi Korban",
-                    prefixIcon: Icon(Icons.heart_broken),
+                // Kondisi hanya muncul kalau status = Sudah ditemukan
+                if (_selectedStatus == "Sudah ditemukan")
+                  DropdownButtonFormField<String>(
+                    value: _selectedKondisi,
+                    items: const [
+                      DropdownMenuItem(value: "Masih hidup", child: Text("Masih hidup")),
+                      DropdownMenuItem(value: "Meninggal", child: Text("Meninggal")),
+                    ],
+                    onChanged: (val) => setState(() => _selectedKondisi = val),
+                    decoration: const InputDecoration(
+                      labelText: "Kondisi Korban",
+                      prefixIcon: Icon(Icons.heart_broken),
+                    ),
                   ),
-                ),
                 const SizedBox(height: 24),
 
                 ElevatedButton.icon(

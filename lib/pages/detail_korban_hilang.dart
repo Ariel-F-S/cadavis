@@ -22,100 +22,181 @@ class DetailKorbanPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Foto korban
-          korban.fotoPath.isNotEmpty
+          // Foto korban besar
+          (korban.fotoPath.isNotEmpty)
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.file(
                     File(korban.fotoPath),
-                    height: 250,
+                    height: 320,
                     width: double.infinity,
                     fit: BoxFit.cover,
                   ),
                 )
               : Container(
-                  height: 250,
+                  height: 320,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(child: Text("Tidak ada foto")),
                 ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Informasi korban
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: Text(korban.nama, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Jenis Kelamin: ${korban.jenisKelamin}"),
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: const Text("Tanggal Hilang"),
-            subtitle: Text(korban.tanggalHilang),
-          ),
-          ListTile(
-            leading: const Icon(Icons.location_on),
-            title: const Text("Lokasi Hilang"),
-            subtitle: Text(korban.lokasi),
-          ),
-          ListTile(
-            leading: const Icon(Icons.accessibility_new),
-            title: const Text("Ciri Fisik"),
-            subtitle: Text(korban.ciriFisik),
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text("Alamat Rumah"),
-            subtitle: Text(korban.alamatRumah),
-          ),
-          ListTile(
-            leading: const Icon(Icons.phone),
-            title: const Text("Nomor Telepon"),
-            subtitle: Text(korban.nomorTelepon),
-          ),
-          const SizedBox(height: 16),
-
-          // Status & Kondisi
+          // Informasi korban dalam card
           Card(
-            color: Colors.grey.shade100,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Status Korban: ${korban.status}",
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  if (korban.status == "Sudah ditemukan")
-                    Text("Kondisi: ${korban.kondisi}"),
-                  const SizedBox(height: 12),
+                  Text(
+                    korban.nama.isNotEmpty ? korban.nama : "Nama tidak tersedia",
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const Divider(),
+                  Row(
+                    children: [
+                      const Icon(Icons.person, size: 20),
+                      const SizedBox(width: 8),
+                      Text("Jenis Kelamin: ${korban.jenisKelamin.isNotEmpty ? korban.jenisKelamin : '-'}"),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 20),
+                      const SizedBox(width: 8),
+                      Text("Tanggal Hilang: ${korban.tanggalHilang.isNotEmpty ? korban.tanggalHilang : '-'}"),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 20),
+                      const SizedBox(width: 8),
+                      Text("Lokasi: ${korban.lokasi.isNotEmpty ? korban.lokasi : '-'}"),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.accessibility_new, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text("Ciri Fisik: ${korban.ciriFisik.isNotEmpty ? korban.ciriFisik : '-'}")),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.home, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text("Alamat: ${korban.alamatRumah.isNotEmpty ? korban.alamatRumah : '-'}")),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, size: 20),
+                      const SizedBox(width: 8),
+                      Text("Telepon: ${korban.nomorTelepon.isNotEmpty ? korban.nomorTelepon : '-'}"),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
 
-                  // Tombol update status (hanya untuk petugas/admin)
-                  if (role == "petugas" || role == "admin")
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.edit),
-                      label: const Text("Update Status"),
-                      onPressed: () async {
-                        final updated = await Navigator.pushNamed(
-                          context,
-                          '/edit-korban',
-                          arguments: korban,
+          // Status & Kondisi
+          Card(
+            color: korban.status == "Sudah ditemukan"
+                ? Colors.green.shade100
+                : Colors.red.shade100,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Status: ${korban.status.isNotEmpty ? korban.status : '-'}",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  if (korban.status == "Sudah ditemukan")
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text("Kondisi: ${korban.kondisi.isNotEmpty ? korban.kondisi : '-'}",
+                          style: const TextStyle(fontSize: 16)),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Tombol update status (untuk semua role)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.edit),
+                    label: const Text("Update Status"),
+                    onPressed: () async {
+                      final updated = await Navigator.pushNamed(
+                        context,
+                        '/edit-korban',
+                        arguments: korban,
+                      );
+                      if (updated != null && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Status korban diperbarui")),
                         );
-                        if (updated != null && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Status korban diperbarui")),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Tambahan dekorasi agar lebih panjang dan estetik
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const Text("Catatan Tambahan",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Data korban ini ditampilkan untuk membantu proses pencarian dan identifikasi. "
+                    "Pastikan informasi selalu diperbarui agar tim pencarian dapat bekerja dengan efektif.",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  Row(
+                    children: const [
+                      Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Jika ada perubahan status atau kondisi korban, segera lakukan update.",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

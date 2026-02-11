@@ -44,11 +44,11 @@ class KorbanHilang {
   factory KorbanHilang.fromMap(Map<String, dynamic> map) {
     return KorbanHilang(
       id: map['id'],
-      nama: map['nama'],
-      jenisKelamin: map['jenis_kelamin'],
-      tanggalHilang: map['tanggal_hilang'],
-      lokasi: map['lokasi'],
-      status: map['status'],
+      nama: map['nama'] ?? '',
+      jenisKelamin: map['jenis_kelamin'] ?? '',
+      tanggalHilang: map['tanggal_hilang'] ?? '',
+      lokasi: map['lokasi'] ?? '',
+      status: map['status'] ?? 'Belum ditemukan',
       kondisi: map['kondisi'] ?? '',
       ciriFisik: map['ciri_fisik'] ?? '',
       alamatRumah: map['alamat_rumah'] ?? '',

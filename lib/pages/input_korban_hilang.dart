@@ -16,13 +16,19 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _lokasiController = TextEditingController();
-  final _ciriFisikController = TextEditingController();
   final _alamatController = TextEditingController();
   final _teleponController = TextEditingController();
+
+  // ✅ Ciri fisik detail
+  final _tinggiController = TextEditingController();
+  final _rambutController = TextEditingController();
+  final _kulitController = TextEditingController();
+  final _tandaKhususController = TextEditingController();
 
   String? _selectedGender;
   DateTime? _selectedDate;
   File? _selectedImage;
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -46,6 +52,7 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
       });
     }
   }
+
   Future<void> _simpanData() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedImage == null) {
@@ -55,6 +62,13 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
         return;
       }
 
+      // ✅ Gabungkan ciri fisik detail
+      final ciriFisik =
+          "Tinggi: ${_tinggiController.text} cm, "
+          "Rambut: ${_rambutController.text}, "
+          "Kulit: ${_kulitController.text}, "
+          "Tanda khusus: ${_tandaKhususController.text}";
+
       final korban = KorbanHilang(
         nama: _namaController.text,
         jenisKelamin: _selectedGender ?? "-",
@@ -62,7 +76,7 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
             ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
             : "-",
         lokasi: _lokasiController.text,
-        ciriFisik: _ciriFisikController.text,
+        ciriFisik: ciriFisik,
         alamatRumah: _alamatController.text,
         nomorTelepon: _teleponController.text,
         status: "Belum ditemukan", // default
@@ -79,7 +93,8 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
       Navigator.pop(context);
     }
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -125,6 +140,7 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   TextFormField(
                     controller: _namaController,
                     decoration: const InputDecoration(
@@ -181,10 +197,41 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
                   ),
                   const SizedBox(height: 12),
 
+                  // ✅ Ciri fisik detail
                   TextFormField(
-                    controller: _ciriFisikController,
+                    controller: _tinggiController,
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: "Ciri Fisik (contoh: tato, bekas luka, dll)",
+                      labelText: "Tinggi Badan (cm)",
+                      prefixIcon: Icon(Icons.height),
+                    ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextFormField(
+                    controller: _rambutController,
+                    decoration: const InputDecoration(
+                      labelText: "Warna Rambut",
+                      prefixIcon: Icon(Icons.brush),
+                    ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
+                  ),
+                  const SizedBox(height: 12),
+
+                  TextFormField(
+                    controller: _kulitController,
+                    decoration: const InputDecoration(
+                      labelText: "Warna Kulit",
+                      prefixIcon: Icon(Icons.color_lens),
+                    ),
+                    validator: (val) => val!.isEmpty ? "Wajib diisi" : null,
+                  ),
+                  const SizedBox(height: 12),                
+                    TextFormField(
+                    controller: _tandaKhususController,
+                    decoration: const InputDecoration(
+                      labelText: "Tanda Khusus (tato, bekas luka, dll)",
                       prefixIcon: Icon(Icons.accessibility_new),
                     ),
                     validator: (val) => val!.isEmpty ? "Wajib diisi" : null,

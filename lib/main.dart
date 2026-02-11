@@ -19,7 +19,7 @@ import 'pages/daftar_korban_hilang.dart';
 import 'pages/input_korban_hilang.dart';
 import 'pages/menu_korban_hilang.dart';
 import 'pages/edit_korban.dart';
-import 'pages/detail_korban_hilang.dart';
+import 'pages/detail_korban_hilang.dart'; // ✅ pastikan nama file sesuai
 
 import 'models/korban_hilang.dart';
 
@@ -27,7 +27,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
 
-
+  // ✅ Reset database lama (hapus cadavis.db)
   final dbPath = await getDatabasesPath();
   await deleteDatabase(join(dbPath, 'cadavis.db'));
 
@@ -120,18 +120,34 @@ class _CadavisAppState extends State<CadavisApp> {
             return MaterialPageRoute(
               builder: (_) => DaftarKorbanHilangPage(role: role),
             );
-          case '/detail-korban': 
+          case '/detail-korban': // detail korban hilang
             final args = settings.arguments as Map<String, dynamic>? ?? {};
-            final korban = args['korban'] as KorbanHilang;
+            final korban = args['korban'];
             final role = args['role'] ?? 'pengguna';
-            return MaterialPageRoute(
-              builder: (_) => DetailKorbanPage(korban: korban, role: role),
-            );
+            if (korban is KorbanHilang) {
+              return MaterialPageRoute(
+                builder: (_) => DetailKorbanPage(korban: korban, role: role),
+              );
+            } else {
+              return MaterialPageRoute(
+                builder: (_) => const Scaffold(
+                  body: Center(child: Text("Data korban tidak valid")),
+                ),
+              );
+            }
           case '/edit-korban': // edit data korban hilang
-            final korban = settings.arguments as KorbanHilang;
-            return MaterialPageRoute(
-              builder: (_) => EditKorbanPage(korban: korban),
-            );
+            final korban = settings.arguments;
+            if (korban is KorbanHilang) {
+              return MaterialPageRoute(
+                builder: (_) => EditKorbanPage(korban: korban),
+              );
+            } else {
+              return MaterialPageRoute(
+                builder: (_) => const Scaffold(
+                  body: Center(child: Text("Data korban tidak valid")),
+                ),
+              );
+            }
 
           default:
             return null;
