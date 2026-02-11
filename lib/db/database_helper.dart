@@ -65,9 +65,9 @@ class DatabaseHelper {
         lokasi_penemuan TEXT,
         koordinat_gps TEXT,
         gambar_path TEXT,
-        gambar_lokasi_path TEXT
+        gambar_lokasi_path TEXT,
         status_korban TEXT,
-        kondisi_korban TEXT,
+        kondisi_korban TEXT
       )
     ''');
 
