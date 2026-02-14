@@ -9,7 +9,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
 import '../db/database_helper.dart';
-import '../models/jenazah.dart';
 
 class LaporanPage extends StatefulWidget {
   const LaporanPage({super.key});
@@ -38,12 +37,14 @@ class _LaporanPageState extends State<LaporanPage> {
   }
 
   /// LOAD TOTAL DATA
-  Future<void> _loadTotalData() async {
+    Future<void> _loadTotalData() async {
     setState(() {
       _isLoadingCount = true;
     });
     
-    final data = await DatabaseHelper.instance.getAllJenazah();
+    // ❌ sebelumnya: getAllJenazah()
+    // ✅ revisi: ambil join jenazah + korban_hilang
+    final data = await DatabaseHelper.instance.getJenazahWithStatus();
     
     if (mounted) {
       setState(() {
@@ -208,53 +209,27 @@ class _LaporanPageState extends State<LaporanPage> {
   }
 
   /// FILTER DATA BERDASARKAN TANGGAL
-  List<Jenazah> _filterDataByDate(List<Jenazah> allData) {
-    if (_selectedStartDate == null && _selectedEndDate == null) {
-      return allData;
-    }
+ List<Map<String, dynamic>> _filterDataByDate(List<Map<String, dynamic>> allData) {
+  if (_selectedStartDate == null && _selectedEndDate == null) {
+    return allData;
+  }
 
-    return allData.where((jenazah) {
-      try {
-        DateTime jenazahDate;
-        
-        if (jenazah.tanggalPenemuan.contains('/')) {
-          final dateParts = jenazah.tanggalPenemuan.split('/');
-          jenazahDate = DateTime(
-            int.parse(dateParts[2]),
-            int.parse(dateParts[1]),
-            int.parse(dateParts[0]),
-          );
-        } else if (jenazah.tanggalPenemuan.contains('-')) {
-          jenazahDate = DateTime.parse(jenazah.tanggalPenemuan);
-        } else {
-          return false;
-        }
-
-        if (_selectedStartDate != null) {
-          final startDateOnly = DateTime(_selectedStartDate!.year, _selectedStartDate!.month, _selectedStartDate!.day);
-          final jenazahDateOnly = DateTime(jenazahDate.year, jenazahDate.month, jenazahDate.day);
-          
-          if (jenazahDateOnly.isBefore(startDateOnly)) {
-            return false;
-          }
-        }
-        
-        if (_selectedEndDate != null) {
-          final endDateOnly = DateTime(_selectedEndDate!.year, _selectedEndDate!.month, _selectedEndDate!.day);
-          final jenazahDateOnly = DateTime(jenazahDate.year, jenazahDate.month, jenazahDate.day);
-          
-          if (jenazahDateOnly.isAfter(endDateOnly)) {
-            return false;
-          }
-        }
-
-        return true;
-      } catch (e) {
-        debugPrint('Error parsing date: ${jenazah.tanggalPenemuan} - $e');
+  return allData.where((j) {
+    try {
+      DateTime jenazahDate = DateTime.parse(j['tanggal_penemuan']);
+      if (_selectedStartDate != null && jenazahDate.isBefore(_selectedStartDate!)) {
         return false;
       }
-    }).toList();
-  }
+      if (_selectedEndDate != null && jenazahDate.isAfter(_selectedEndDate!)) {
+        return false;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }).toList();
+}
+
 
   /// GET SAVE PATH
   Future<String> _getSavePath(String fileName) async {
@@ -292,7 +267,7 @@ class _LaporanPageState extends State<LaporanPage> {
   }
 
   /// EXPORT EXCEL
-  Future<void> _exportExcel() async {
+    Future<void> _exportExcel() async {
     if (_selectedStartDate == null && _selectedEndDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -308,30 +283,19 @@ class _LaporanPageState extends State<LaporanPage> {
     });
 
     try {
-      final allData = await DatabaseHelper.instance.getAllJenazah();
+      // ❌ sebelumnya: getAllJenazah()
+      // ✅ revisi: ambil join jenazah + korban_hilang
+      final allData = await DatabaseHelper.instance.getJenazahWithStatus();
       final filteredData = _filterDataByDate(allData);
-      
+
       if (filteredData.isEmpty) {
-        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('⚠️ Tidak ada data pada rentang tanggal yang dipilih'),
             backgroundColor: Colors.orange,
           ),
         );
-        setState(() {
-          _isExporting = false;
-        });
-        return;
-      }
-
-      bool hasPermission = await _requestPermission();
-      
-      if (!hasPermission) {
-        if (!mounted) return;
-        setState(() {
-          _isExporting = false;
-        });
+        setState(() => _isExporting = false);
         return;
       }
 
@@ -348,38 +312,30 @@ class _LaporanPageState extends State<LaporanPage> {
         ex.TextCellValue('Total'),
         ex.TextCellValue('Lokasi'),
         ex.TextCellValue('Koordinat GPS'),
-        ex.TextCellValue('Status Korban'),
-        ex.TextCellValue('Kondisi Korban'),
+        ex.TextCellValue('Status Korban'),   // ✅ dari korban_hilang
+        ex.TextCellValue('Kondisi Korban'),  // ✅ dari korban_hilang
       ]);
-
-      for (int i = 0; i < 10; i++) {
-        var cell = sheet.cell(
-          ex.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
-        );
-        cell.cellStyle = ex.CellStyle(
-          bold: true,
-          backgroundColorHex: ex.ExcelColor.fromHexString('#7C4DFF'),
-          fontColorHex: ex.ExcelColor.white,
-        );
-      }
 
       int no = 1;
       for (var j in filteredData) {
         sheet.appendRow([
           ex.IntCellValue(no),
-          ex.TextCellValue(j.namaPetugas),
-          ex.TextCellValue(j.tanggalPenemuan),
-          ex.TextCellValue(j.waktuPenemuan),
-          ex.IntCellValue(j.jumlahLaki),
-          ex.IntCellValue(j.jumlahPerempuan),
-          ex.IntCellValue(j.jumlahLaki + j.jumlahPerempuan),
-          ex.TextCellValue(j.lokasiPenemuan),
-          ex.TextCellValue(j.koordinatGPS ?? '-'),
-          ex.TextCellValue(j.statusKorban),
-          ex.TextCellValue(j.kondisiKorban ?? '-'),
+          ex.TextCellValue(j['nama_petugas'] ?? ''),
+          ex.TextCellValue(j['tanggal_penemuan'] ?? ''),
+          ex.TextCellValue(j['waktu_penemuan'] ?? ''),
+          ex.IntCellValue(j['jumlah_laki'] ?? 0),
+          ex.IntCellValue(j['jumlah_perempuan'] ?? 0),
+          ex.IntCellValue((j['jumlah_laki'] ?? 0) + (j['jumlah_perempuan'] ?? 0)),
+          ex.TextCellValue(j['lokasi_penemuan'] ?? ''),
+          ex.TextCellValue(j['koordinat_gps'] ?? '-'),
+          ex.TextCellValue(j['status'] ?? '-'),   // ✅ ambil dari join korban_hilang
+          ex.TextCellValue(j['kondisi'] ?? '-'),  // ✅ ambil dari join korban_hilang
         ]);
         no++;
       }
+
+      // sisanya (save file, snackbar, open file) tetap sama
+
 
       var fileBytes = excel.encode();
       if (fileBytes == null) {

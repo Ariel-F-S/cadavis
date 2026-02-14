@@ -3,11 +3,189 @@ import 'package:flutter/material.dart';
 import '../models/korban_hilang.dart';
 import '../db/database_helper.dart';
 
-class DetailKorbanPage extends StatelessWidget {
+class DetailKorbanPage extends StatefulWidget {
   final KorbanHilang korban;
-  final String role; // admin / petugas / user
+  final String role;
 
-  const DetailKorbanPage({super.key, required this.korban, required this.role});
+  const DetailKorbanPage({
+    super.key,
+    required this.korban,
+    required this.role,
+  });
+
+  @override
+  State<DetailKorbanPage> createState() => _DetailKorbanPageState();
+}
+
+class _DetailKorbanPageState extends State<DetailKorbanPage> {
+
+  late TextEditingController ciriController;
+  late TextEditingController alamatController;
+  late TextEditingController teleponController;
+  late TextEditingController lokasiController;
+
+  bool get isAdmin => widget.role == "admin";
+
+  @override
+  void initState() {
+    super.initState();
+    ciriController = TextEditingController(text: widget.korban.ciriFisik);
+    alamatController = TextEditingController(text: widget.korban.alamatRumah);
+    teleponController = TextEditingController(text: widget.korban.nomorTelepon);
+    lokasiController = TextEditingController(text: widget.korban.lokasi);
+  }
+
+ import 'package:flutter/material.dart';
+import '../models/korban_hilang.dart';
+import '../db/database_helper.dart';
+import 'detail_korban_page.dart';
+
+class DaftarKorbanHilangPage extends StatefulWidget {
+  final String role;
+
+  const DaftarKorbanHilangPage({
+    Key? key,
+    required this.role,
+  }) : super(key: key);
+
+  @override
+  State<DaftarKorbanHilangPage> createState() =>
+      _DaftarKorbanHilangPageState();
+}
+
+class _DaftarKorbanHilangPageState
+    extends State<DaftarKorbanHilangPage> {
+
+  List<KorbanHilang> _listKorban = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKorban();
+  }
+
+  Future<void> _loadKorban() async {
+    final data =
+        await DatabaseHelper.instance.getAllKorbanHilang();
+    setState(() {
+      _listKorban = data;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _deleteKorban(int id) async {
+    await DatabaseHelper.instance.deleteKorbanHilang(id);
+    _loadKorban();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Daftar Korban Hilang"),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _listKorban.isEmpty
+              ? const Center(
+                  child: Text("Belum ada data korban"),
+                )
+              : ListView.builder(
+                  itemCount: _listKorban.length,
+                  itemBuilder: (context, index) {
+                    final korban = _listKorban[index];
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor:
+                              korban.status == "Sudah ditemukan"
+                                  ? Colors.green
+                                  : Colors.red,
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                          ),
+                        ),
+                        title: Text(korban.nama),
+                        subtitle: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                          children: [
+                            Text("Lokasi: ${korban.lokasi}"),
+                            Text("Status: ${korban.status}"),
+                            if (korban.status ==
+                                "Sudah ditemukan")
+                              Text(
+                                "Kondisi: ${korban.kondisi}",
+                                style: TextStyle(
+                                  color: korban.kondisi ==
+                                          "Meninggal"
+                                      ? Colors.red
+                                      : Colors.green,
+                                ),
+                              ),
+                          ],
+                        ),
+                        isThreeLine: true,
+
+                        // ===============================
+                        // NAVIGATE KE DETAIL
+                        // ===============================
+                        onTap: () async {
+                          final result =
+                              await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  DetailKorbanPage(
+                                korban: korban,
+                                role: widget.role,
+                              ),
+                            ),
+                          );
+
+                          if (result != null) {
+                            _loadKorban();
+                          }
+                        },
+
+                        // ===============================
+                        // DELETE (HANYA ADMIN)
+                        // ===============================
+                        trailing: widget.role == "admin"
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  if (korban.id != null) {
+                                    _deleteKorban(
+                                        korban.id!);
+                                  }
+                                },
+                              )
+                            : null,
+                      ),
+                    );
+                  },
+                ),
+    );
+  }
+}
+
+    await DatabaseHelper.instance.updateKorbanHilang(widget.korban);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Data berhasil diperbarui")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,186 +200,179 @@ class DetailKorbanPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Foto korban besar
-          (korban.fotoPath.isNotEmpty)
+
+          /// FOTO
+          widget.korban.fotoPath.isNotEmpty
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.file(
-                    File(korban.fotoPath),
-                    height: 320,
-                    width: double.infinity,
+                    File(widget.korban.fotoPath),
+                    height: 300,
                     fit: BoxFit.cover,
                   ),
                 )
               : Container(
-                  height: 320,
+                  height: 300,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Center(child: Text("Tidak ada foto")),
                 ),
+
           const SizedBox(height: 20),
 
-          // Informasi korban dalam card
+          /// DATA UTAMA
           Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    korban.nama.isNotEmpty ? korban.nama : "Nama tidak tersedia",
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+
+                  _buildField("Jenis Kelamin", widget.korban.jenisKelamin, false),
+                  _buildField("Tanggal Hilang", widget.korban.tanggalHilang, false),
+
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: lokasiController,
+                    enabled: isAdmin,
+                    decoration: const InputDecoration(
+                      labelText: "Lokasi Hilang",
+                    ),
                   ),
-                  const Divider(),
-                  Row(
-                    children: [
-                      const Icon(Icons.person, size: 20),
-                      const SizedBox(width: 8),
-                      Text("Jenis Kelamin: ${korban.jenisKelamin.isNotEmpty ? korban.jenisKelamin : '-'}"),
-                    ],
+
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: ciriController,
+                    enabled: isAdmin,
+                    decoration: const InputDecoration(
+                      labelText: "Ciri Fisik",
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 20),
-                      const SizedBox(width: 8),
-                      Text("Tanggal Hilang: ${korban.tanggalHilang.isNotEmpty ? korban.tanggalHilang : '-'}"),
-                    ],
+
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: alamatController,
+                    enabled: isAdmin,
+                    decoration: const InputDecoration(
+                      labelText: "Alamat Rumah",
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, size: 20),
-                      const SizedBox(width: 8),
-                      Text("Lokasi: ${korban.lokasi.isNotEmpty ? korban.lokasi : '-'}"),
-                    ],
+
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: teleponController,
+                    enabled: isAdmin,
+                    decoration: const InputDecoration(
+                      labelText: "Nomor Telepon",
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.accessibility_new, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text("Ciri Fisik: ${korban.ciriFisik.isNotEmpty ? korban.ciriFisik : '-'}")),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.home, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text("Alamat: ${korban.alamatRumah.isNotEmpty ? korban.alamatRumah : '-'}")),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.phone, size: 20),
-                      const SizedBox(width: 8),
-                      Text("Telepon: ${korban.nomorTelepon.isNotEmpty ? korban.nomorTelepon : '-'}"),
-                    ],
-                  ),
+
+                  const SizedBox(height: 15),
+
+                  if (isAdmin)
+                    ElevatedButton(
+                      onPressed: _saveAdminEdit,
+                      child: const Text("Simpan Perubahan"),
+                    ),
                 ],
               ),
             ),
           ),
+
           const SizedBox(height: 20),
 
-          // Status & Kondisi
+          /// STATUS (BOLEH SEMUA ROLE)
           Card(
-            color: korban.status == "Sudah ditemukan"
+            color: widget.korban.status == "Sudah ditemukan"
                 ? Colors.green.shade100
                 : Colors.red.shade100,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Status: ${korban.status.isNotEmpty ? korban.status : '-'}",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  if (korban.status == "Sudah ditemukan")
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text("Kondisi: ${korban.kondisi.isNotEmpty ? korban.kondisi : '-'}",
-                          style: const TextStyle(fontSize: 16)),
-                    ),
-                  const SizedBox(height: 16),
 
-                  // Tombol update status (untuk semua role)
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.edit),
-                    label: const Text("Update Status"),
+                  const Text("Status Korban",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+
+                  const SizedBox(height: 10),
+
+                  DropdownButtonFormField<String>(
+                    value: widget.korban.status,
+                    items: ["Belum ditemukan", "Sudah ditemukan"]
+                        .map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        widget.korban.status = value!;
+                      });
+                    },
+                  ),
+
+                  if (widget.korban.status == "Sudah ditemukan")
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: TextField(
+                        decoration: const InputDecoration(
+                          labelText: "Kondisi",
+                        ),
+                        controller: TextEditingController(
+                            text: widget.korban.kondisi),
+                        onChanged: (value) {
+                          widget.korban.kondisi = value;
+                        },
+                      ),
+                    ),
+
+                  const SizedBox(height: 15),
+
+                  ElevatedButton(
                     onPressed: () async {
-                      final updated = await Navigator.pushNamed(
-                        context,
-                        '/edit-korban',
-                        arguments: korban,
-                      );
-                      if (updated != null && context.mounted) {
+                      await DatabaseHelper.instance
+                          .updateKorbanHilang(widget.korban);
+
+                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Status korban diperbarui")),
+                          const SnackBar(
+                              content: Text("Status berhasil diperbarui")),
                         );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Tambahan dekorasi agar lebih panjang dan estetik
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const Text("Catatan Tambahan",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Data korban ini ditampilkan untuk membantu proses pencarian dan identifikasi. "
-                    "Pastikan informasi selalu diperbarui agar tim pencarian dapat bekerja dengan efektif.",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  Row(
-                    children: const [
-                      Icon(Icons.info_outline, size: 20, color: Colors.grey),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Jika ada perubahan status atau kondisi korban, segera lakukan update.",
-                          style: TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ],
+                    child: const Text("Update Status"),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildField(String label, String value, bool editable) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TextField(
+        enabled: editable,
+        controller: TextEditingController(text: value),
+        decoration: InputDecoration(
+          labelText: label,
+        ),
       ),
     );
   }

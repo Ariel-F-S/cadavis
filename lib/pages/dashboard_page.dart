@@ -49,14 +49,15 @@ class _DashboardPageState extends State<DashboardPage> {
   String _getSapaan() {
   final hour = DateTime.now().hour;
   String waktu;
-  if (hour < 11) waktu = 'Selamat Pagi';
-  else if (hour < 15) waktu = 'Selamat Siang';
+  if (hour < 11) {
+    waktu = 'Selamat Pagi';
+  } else if (hour < 15) waktu = 'Selamat Siang';
   else if (hour < 18) waktu = 'Selamat Sore';
   else waktu = 'Selamat Malam';
 
   return widget.role == 'admin'
-      ? '$waktu'
-      : '$waktu';
+      ? waktu
+      : waktu;
 }
   @override
   Widget build(BuildContext context) {

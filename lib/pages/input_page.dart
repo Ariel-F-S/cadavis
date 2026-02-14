@@ -15,7 +15,9 @@ class InputJenazahPage extends StatefulWidget {
   State<InputJenazahPage> createState() => _InputJenazahPageState();
 }
 
+
 class _InputJenazahPageState extends State<InputJenazahPage> {
+  String _kondisiKorban = '';
   final _formKey = GlobalKey<FormState>();
 
   final _namaPetugasController = TextEditingController();
@@ -32,7 +34,9 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
   bool _isLoadingGPS = false;
   
   // ✅ TAMBAHAN: Status korban
-  String _statusKorban = 'Meninggal'; // Default: Meninggal
+  String? selectedStatus;
+  String? selectedKondisi;
+  
   
   final ImagePicker _picker = ImagePicker();
 
@@ -214,9 +218,10 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     }
 
     // Validasi status korban
-    if (_statusKorban.isEmpty) {
+    
+      if (_kondisiKorban.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status korban wajib dipilih')),
+        const SnackBar(content: Text('⚠️ Kondisi korban wajib diisi')),
       );
       return;
     }
@@ -305,8 +310,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
         koordinatGPS: _koordinatGPS,
         gambarPath: gambarJenazahPath,
         gambarLokasiPath: gambarLokasiPath,
-        statusKorban: _statusKorban,
-        kondisiKorban: _statusKorban == 'Hidup' ? 'Hidup' : 'Meninggal',
+        kondisiKorban: _kondisiKorban,
       );
 
       await DatabaseHelper.instance.insertJenazah(jenazah);
@@ -332,7 +336,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
         _selectedImageJenazah = null;
         _selectedImageLokasi = null;
         _koordinatGPS = null;
-        _statusKorban = 'Meninggal'; // balik ke default
+        _kondisiKorban = 'Meninggal'; // balik ke default
       });
 
       Navigator.pop(context);
@@ -612,7 +616,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
               Card(
                 color: isDark 
                     ? const Color(0xFF1E1E1E) 
-                    : (_statusKorban == 'Hidup' 
+                    : (_kondisiKorban == 'Hidup' 
                         ? Colors.green.shade50 
                         : Colors.red.shade50),
                 child: Padding(
@@ -623,10 +627,10 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                       Row(
                         children: [
                           Icon(
-                            _statusKorban == 'Hidup' 
+                            _kondisiKorban == 'Hidup' 
                                 ? Icons.favorite 
                                 : Icons.heart_broken,
-                            color: _statusKorban == 'Hidup' 
+                            color: _kondisiKorban == 'Hidup' 
                                 ? Colors.green 
                                 : Colors.red,
                             size: 20,
@@ -647,10 +651,10 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                           Expanded(
                             child: RadioListTile<String>(
                               value: 'Hidup',
-                              groupValue: _statusKorban,
+                              groupValue: _kondisiKorban,
                               onChanged: (value) {
                                 setState(() {
-                                  _statusKorban = value!;
+                                  _kondisiKorban  = value!;
                                 });
                               },
                               title: const Text('Hidup'),
@@ -662,10 +666,10 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
                           Expanded(
                             child: RadioListTile<String>(
                               value: 'Meninggal',
-                              groupValue: _statusKorban,
+                              groupValue: _kondisiKorban,
                               onChanged: (value) {
                                 setState(() {
-                                  _statusKorban = value!;
+                                  _kondisiKorban = value!;
                                 });
                               },
                               title: const Text('Meninggal'),

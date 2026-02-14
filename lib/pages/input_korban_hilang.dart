@@ -152,7 +152,7 @@ class _KorbanHilangInputPageState extends State<KorbanHilangInputPage> {
                   const SizedBox(height: 12),
 
                   DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     items: const [
                       DropdownMenuItem(value: "Laki-laki", child: Text("Laki-laki")),
                       DropdownMenuItem(value: "Perempuan", child: Text("Perempuan")),

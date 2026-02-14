@@ -42,7 +42,7 @@ class _StatistikPageState extends State<StatistikPage> {
       laki += j.jumlahLaki;
       perempuan += j.jumlahPerempuan;
 
-      if (j.statusKorban == 'Hidup') {
+      if (j.kondisiKorban == 'Hidup') {
         hidup += j.jumlahLaki + j.jumlahPerempuan;
       } else {
         meninggal += j.jumlahLaki + j.jumlahPerempuan;

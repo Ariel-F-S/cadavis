@@ -93,7 +93,7 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
 
                 // Dropdown status
                 DropdownButtonFormField<String>(
-                  value: _selectedStatus,
+                  initialValue: _selectedStatus,
                   items: const [
                     DropdownMenuItem(value: "Belum ditemukan", child: Text("Belum ditemukan")),
                     DropdownMenuItem(value: "Sudah ditemukan", child: Text("Sudah ditemukan")),
@@ -109,7 +109,7 @@ class _EditKorbanPageState extends State<EditKorbanPage> {
                 // Kondisi hanya muncul kalau status = Sudah ditemukan
                 if (_selectedStatus == "Sudah ditemukan")
                   DropdownButtonFormField<String>(
-                    value: _selectedKondisi,
+                    initialValue: _selectedKondisi,
                     items: const [
                       DropdownMenuItem(value: "Masih hidup", child: Text("Masih hidup")),
                       DropdownMenuItem(value: "Meninggal", child: Text("Meninggal")),

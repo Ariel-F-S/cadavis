@@ -23,13 +23,15 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3, // ⚠️ JANGAN NAIKKAN LAGI kalau tidak perlu
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
+  // ================= CREATE =================
   Future<void> _onCreate(Database db, int version) async {
-    // Tabel Users
+
     await db.execute('''
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,19 +41,18 @@ class DatabaseHelper {
       )
     ''');
 
-    // Insert default admin & user
     await db.insert('users', {
       'username': 'admin',
       'password': 'admin123',
       'role': 'admin',
     });
+
     await db.insert('users', {
       'username': 'user',
       'password': 'user123',
       'role': 'pengguna',
     });
 
-    // Tabel Jenazah
     await db.execute('''
       CREATE TABLE jenazah (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,12 +67,10 @@ class DatabaseHelper {
         koordinat_gps TEXT,
         gambar_path TEXT,
         gambar_lokasi_path TEXT,
-        status_korban TEXT,
         kondisi_korban TEXT
       )
     ''');
 
-    // Tabel Korban Hilang
     await db.execute('''
       CREATE TABLE korban_hilang (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,12 +83,25 @@ class DatabaseHelper {
         ciri_fisik TEXT,
         alamat_rumah TEXT,
         foto_path TEXT,
-        nomor_telepon TEXT
+        nomor_telepon TEXT,
+        jenazah_id INTEGER,
+        FOREIGN KEY (jenazah_id) REFERENCES jenazah (id)
       )
     ''');
   }
 
-  // ================== CRUD USER ==================
+  // ================= UPGRADE TANPA HAPUS DATA =================
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+
+    if (oldVersion < 3) {
+      // Tambah kolom tanpa hapus data
+      await db.execute(
+        "ALTER TABLE jenazah ADD COLUMN kondisi_korban TEXT"
+      );
+    }
+  }
+
+  // ================= CRUD USER =================
   Future<int> insertUser(User user) async {
     final db = await database;
     return await db.insert('users', user.toMap());
@@ -102,6 +114,7 @@ class DatabaseHelper {
       where: 'username = ? AND password = ?',
       whereArgs: [username, password],
     );
+
     if (result.isNotEmpty) {
       return User.fromMap(result.first);
     }
@@ -116,10 +129,14 @@ class DatabaseHelper {
 
   Future<int> deleteUser(int id) async {
     final db = await database;
-    return await db.delete('users', where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      'users',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
-  // ================== CRUD JENAZAH ==================
+  // ================= CRUD JENAZAH =================
   Future<int> insertJenazah(Jenazah jenazah) async {
     final db = await database;
     return await db.insert('jenazah', jenazah.toMap());
@@ -127,7 +144,10 @@ class DatabaseHelper {
 
   Future<List<Jenazah>> getAllJenazah() async {
     final db = await database;
-    final result = await db.query('jenazah', orderBy: 'tanggal_penemuan DESC');
+    final result = await db.query(
+      'jenazah',
+      orderBy: 'tanggal_penemuan DESC',
+    );
     return result.map((e) => Jenazah.fromMap(e)).toList();
   }
 
@@ -143,10 +163,14 @@ class DatabaseHelper {
 
   Future<int> deleteJenazah(int id) async {
     final db = await database;
-    return await db.delete('jenazah', where: 'id = ?', whereArgs: [id]);
+    return await db.delete(
+      'jenazah',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
-  // ================== CRUD KORBAN HILANG ==================
+  // ================= CRUD KORBAN HILANG =================
   Future<int> insertKorbanHilang(KorbanHilang korban) async {
     final db = await database;
     return await db.insert('korban_hilang', korban.toMap());
@@ -180,17 +204,36 @@ class DatabaseHelper {
     );
   }
 
-  Future<List<KorbanHilang>> getKorbanByDateRange(String start, String end) async {
+  Future<List<KorbanHilang>> getKorbanByDateRange(
+      String start, String end) async {
     final db = await database;
+
     final result = await db.query(
       'korban_hilang',
       where: 'tanggal_hilang BETWEEN ? AND ?',
       whereArgs: [start, end],
     );
+
     return result.map((e) => KorbanHilang.fromMap(e)).toList();
   }
 
-  // ================== Utility ==================
+  // ================= JOIN =================
+  Future<List<Map<String, dynamic>>> getJenazahWithStatus() async {
+    final db = await database;
+
+    return await db.rawQuery('''
+      SELECT j.id, j.nama_petugas, j.tanggal_penemuan, j.waktu_penemuan,
+             j.jumlah_laki, j.jumlah_perempuan,
+             j.lokasi_penemuan, j.koordinat_gps,
+             j.kondisi_korban,
+             k.status, k.kondisi
+      FROM jenazah j
+      LEFT JOIN korban_hilang k
+      ON j.id = k.jenazah_id
+    ''');
+  }
+
+  // ⚠️ JANGAN PANGGIL INI SEMBARANGAN
   Future<void> clearDatabase() async {
     final db = await database;
     await db.delete('users');
