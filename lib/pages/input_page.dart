@@ -356,7 +356,7 @@ class _InputJenazahPageState extends State<InputJenazahPage> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Input Data Jenazah'),
+        title: const Text('Input Data Korban'),
         backgroundColor: const Color(0xFF7C4DFF),
         foregroundColor: Colors.white,
       ),

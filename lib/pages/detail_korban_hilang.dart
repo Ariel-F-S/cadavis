@@ -23,6 +23,8 @@ class _DetailKorbanPageState
 
   late KorbanHilang korban;
 
+  bool isEditMode = false;
+
   late TextEditingController ciriController;
   late TextEditingController alamatController;
   late TextEditingController teleponController;
@@ -45,20 +47,13 @@ class _DetailKorbanPageState
   }
 
   // ===============================
-  // UPDATE STATUS (SEMUA ROLE)
+  // UPDATE STATUS
   // ===============================
   Future<void> _updateStatus(String status) async {
-    String kondisiBaru = korban.kondisi;
-
-    if (status == "Sudah ditemukan") {
-      kondisiBaru = "Masih hidup";
-    } else {
-      kondisiBaru = "";
-    }
-
     final updated = korban.copyWith(
       status: status,
-      kondisi: kondisiBaru,
+      kondisi:
+          status == "Belum ditemukan" ? "" : korban.kondisi,
     );
 
     await DatabaseHelper.instance
@@ -70,7 +65,23 @@ class _DetailKorbanPageState
   }
 
   // ===============================
-  // SAVE EDIT (ADMIN SAJA)
+  // UPDATE KONDISI
+  // ===============================
+  Future<void> _updateKondisi(String kondisi) async {
+    final updated = korban.copyWith(
+      kondisi: kondisi,
+    );
+
+    await DatabaseHelper.instance
+        .updateKorbanHilang(updated);
+
+    setState(() {
+      korban = updated;
+    });
+  }
+
+  // ===============================
+  // SAVE EDIT (ADMIN)
   // ===============================
   Future<void> _saveAdminEdit() async {
     final updated = korban.copyWith(
@@ -83,11 +94,14 @@ class _DetailKorbanPageState
     await DatabaseHelper.instance
         .updateKorbanHilang(updated);
 
-    Navigator.pop(context, true);
+    setState(() {
+      korban = updated;
+      isEditMode = false;
+    });
   }
 
   // ===============================
-  // FOTO FULLSCREEN
+  // FULLSCREEN FOTO
   // ===============================
   void _showFullImage() {
     if (korban.fotoPath.isEmpty) return;
@@ -114,18 +128,45 @@ class _DetailKorbanPageState
 
   @override
   Widget build(BuildContext context) {
+
     final isAdmin = widget.role == "admin";
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final cardColor =
+        isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
+    final primaryText =
+        isDark ? Colors.white : Colors.black87;
+
+    final secondaryText =
+        isDark ? Colors.white70 : Colors.black54;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Detail Korban Hilang"),
+        actions: [
+          if (isAdmin)
+            IconButton(
+              icon: Icon(
+                isEditMode
+                    ? Icons.close
+                    : Icons.edit,
+              ),
+              onPressed: () {
+                setState(() {
+                  isEditMode = !isEditMode;
+                });
+              },
+            ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
 
           // ===============================
-          // FOTO (BISA DIKLIK)
+          // FOTO
           // ===============================
           korban.fotoPath.isNotEmpty
               ? GestureDetector(
@@ -135,33 +176,24 @@ class _DetailKorbanPageState
                         BorderRadius.circular(12),
                     child: Image.file(
                       File(korban.fotoPath),
-                      height: 300,
-                      width: double.infinity,
+                      height: 250,
                       fit: BoxFit.cover,
                     ),
                   ),
                 )
-              : Container(
-                  height: 300,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius:
-                        BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                      child: Text("Tidak ada foto")),
-                ),
+              : const SizedBox(),
 
           const SizedBox(height: 20),
 
           // ===============================
-          // INFORMASI KORBAN
+          // CARD BIODATA
           // ===============================
           Card(
+            color: cardColor,
             shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(12)),
-            elevation: 4,
+              borderRadius:
+                  BorderRadius.circular(12),
+            ),
             child: Padding(
               padding:
                   const EdgeInsets.all(16),
@@ -172,105 +204,129 @@ class _DetailKorbanPageState
 
                   Text(
                     korban.nama,
-                    style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight:
-                            FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight:
+                          FontWeight.bold,
+                      color: primaryText,
+                    ),
                   ),
 
-                  const Divider(),
-
-                  Text(
-                      "Jenis Kelamin: ${korban.jenisKelamin}"),
-                  Text(
-                      "Tanggal Hilang: ${korban.tanggalHilang}"),
+                  Divider(
+                    color: isDark
+                        ? Colors.grey[700]
+                        : Colors.grey[400],
+                  ),
 
                   const SizedBox(height: 10),
 
-                  // ===============================
-                  // LOKASI (ADMIN EDIT)
-                  // ===============================
-                  isAdmin
+                  isEditMode
                       ? TextField(
                           controller:
                               lokasiController,
+                          style: TextStyle(
+                              color:
+                                  primaryText),
                           decoration:
                               const InputDecoration(
                                   labelText:
                                       "Lokasi"),
                         )
                       : Text(
-                          "Lokasi: ${korban.lokasi}"),
+                          "Lokasi: ${korban.lokasi}",
+                          style: TextStyle(
+                              color:
+                                  secondaryText),
+                        ),
 
                   const SizedBox(height: 10),
 
-                  // ===============================
-                  // CIRI FISIK
-                  // ===============================
-                  isAdmin
+                  isEditMode
                       ? TextField(
                           controller:
                               ciriController,
+                          style: TextStyle(
+                              color:
+                                  primaryText),
                           decoration:
                               const InputDecoration(
                                   labelText:
                                       "Ciri Fisik"),
                         )
                       : Text(
-                          "Ciri Fisik: ${korban.ciriFisik}"),
+                          "Ciri Fisik: ${korban.ciriFisik}",
+                          style: TextStyle(
+                              color:
+                                  secondaryText),
+                        ),
 
                   const SizedBox(height: 10),
 
-                  // ===============================
-                  // ALAMAT
-                  // ===============================
-                  isAdmin
+                  isEditMode
                       ? TextField(
                           controller:
                               alamatController,
+                          style: TextStyle(
+                              color:
+                                  primaryText),
                           decoration:
                               const InputDecoration(
                                   labelText:
                                       "Alamat"),
                         )
                       : Text(
-                          "Alamat: ${korban.alamatRumah}"),
+                          "Alamat: ${korban.alamatRumah}",
+                          style: TextStyle(
+                              color:
+                                  secondaryText),
+                        ),
 
                   const SizedBox(height: 10),
 
-                  // ===============================
-                  // TELEPON
-                  // ===============================
-                  isAdmin
+                  isEditMode
                       ? TextField(
                           controller:
                               teleponController,
+                          style: TextStyle(
+                              color:
+                                  primaryText),
                           decoration:
                               const InputDecoration(
                                   labelText:
                                       "Nomor Telepon"),
                         )
                       : Text(
-                          "Telepon: ${korban.nomorTelepon}"),
+                          "Telepon: ${korban.nomorTelepon}",
+                          style: TextStyle(
+                              color:
+                                  secondaryText),
+                        ),
+
+                  const SizedBox(height: 20),
+
+                  if (isEditMode)
+                    ElevatedButton(
+                      onPressed:
+                          _saveAdminEdit,
+                      child: const Text(
+                          "Simpan Perubahan"),
+                    ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
 
           // ===============================
-          // STATUS (SEMUA ROLE BISA UBAH)
+          // CARD STATUS
           // ===============================
           Card(
-            color: korban.status ==
-                    "Sudah ditemukan"
-                ? Colors.green.shade100
-                : Colors.red.shade100,
+            color: cardColor,
             shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(12)),
-            elevation: 4,
+              borderRadius:
+                  BorderRadius.circular(12),
+            ),
             child: Padding(
               padding:
                   const EdgeInsets.all(16),
@@ -279,12 +335,13 @@ class _DetailKorbanPageState
                     CrossAxisAlignment.start,
                 children: [
 
-                  const Text(
-                    "Status",
+                  Text(
+                    "Apakah korban sudah ditemukan?",
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight:
-                            FontWeight.bold),
+                      fontWeight:
+                          FontWeight.bold,
+                      color: primaryText,
+                    ),
                   ),
 
                   const SizedBox(height: 10),
@@ -313,26 +370,53 @@ class _DetailKorbanPageState
                     },
                   ),
 
+                  const SizedBox(height: 20),
+
                   if (korban.status ==
-                      "Sudah ditemukan")
+                      "Sudah ditemukan") ...[
+
                     Text(
-                        "Kondisi: ${korban.kondisi}"),
+                      "Bagaimana kondisi korban?",
+                      style: TextStyle(
+                        fontWeight:
+                            FontWeight.bold,
+                        color: primaryText,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    DropdownButton<String>(
+                      value: korban.kondisi
+                              .isEmpty
+                          ? "Masih hidup"
+                          : korban.kondisi,
+                      isExpanded: true,
+                      items: const [
+                        DropdownMenuItem(
+                          value:
+                              "Masih hidup",
+                          child: Text(
+                              "Masih hidup"),
+                        ),
+                        DropdownMenuItem(
+                          value:
+                              "Sudah meninggal",
+                          child: Text(
+                              "Sudah meninggal"),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          _updateKondisi(value);
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // ===============================
-          // TOMBOL SIMPAN (ADMIN SAJA)
-          // ===============================
-          if (isAdmin)
-            ElevatedButton(
-              onPressed: _saveAdminEdit,
-              child:
-                  const Text("Simpan Perubahan"),
-            ),
         ],
       ),
     );
