@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+
 import '../models/korban_hilang.dart';
 import '../models/user.dart';
 import '../models/jenazah.dart';
@@ -11,6 +12,7 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
+  // ================= DATABASE INIT =================
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase('cadavis.db');
@@ -21,11 +23,10 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(
+    return openDatabase(
       path,
       version: 3,
       onConfigure: (db) async {
-        // 🔥 WAJIB supaya foreign key aktif
         await db.execute('PRAGMA foreign_keys = ON');
       },
       onCreate: _onCreate,
@@ -33,7 +34,7 @@ class DatabaseHelper {
     );
   }
 
-  // ================= CREATE =================
+  // ================= CREATE TABLE =================
   Future<void> _onCreate(Database db, int version) async {
     // USERS
     await db.execute('''
@@ -95,13 +96,12 @@ class DatabaseHelper {
       )
     ''');
 
-    // 🔥 INDEX UNTUK PERFORMA JOIN
     await db.execute(
       'CREATE INDEX idx_korban_jenazah_id ON korban_hilang (jenazah_id)'
     );
   }
 
-  // ================= UPGRADE =================
+  // ================= DATABASE UPGRADE =================
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 3) {
       await db.execute(
@@ -110,10 +110,10 @@ class DatabaseHelper {
     }
   }
 
-  // ================= CRUD USER =================
+  // ================= USERS =================
   Future<int> insertUser(User user) async {
     final db = await database;
-    return await db.insert(
+    return db.insert(
       'users',
       user.toMap(),
       conflictAlgorithm: ConflictAlgorithm.abort,
@@ -122,6 +122,7 @@ class DatabaseHelper {
 
   Future<User?> getUser(String username, String password) async {
     final db = await database;
+
     final result = await db.query(
       'users',
       where: 'username = ? AND password = ?',
@@ -131,6 +132,7 @@ class DatabaseHelper {
     if (result.isNotEmpty) {
       return User.fromMap(result.first);
     }
+
     return null;
   }
 
@@ -140,68 +142,78 @@ class DatabaseHelper {
     return result.map((e) => User.fromMap(e)).toList();
   }
 
-  Future<int> deleteUser(int id) async {
+  // ================= JENAZAH =================
+  Future<int> insertJenazah(Jenazah data) async {
     final db = await database;
-    return await db.delete('users', where: 'id = ?', whereArgs: [id]);
-  }
 
-  // ================= CRUD JENAZAH =================
-  Future<int> insertJenazah(Jenazah jenazah) async {
-    final db = await database;
-    return await db.insert(
+    return db.insert(
       'jenazah',
-      jenazah.toMap(),
+      data.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   Future<List<Jenazah>> getAllJenazah() async {
     final db = await database;
+
     final result = await db.query(
       'jenazah',
       orderBy: 'tanggal_penemuan DESC',
     );
+
     return result.map((e) => Jenazah.fromMap(e)).toList();
   }
 
-  Future<int> updateJenazah(Jenazah jenazah) async {
+  Future<int> updateJenazah(Jenazah data) async {
     final db = await database;
-    return await db.update(
+
+    if (data.id == null) {
+      throw Exception("ID jenazah kosong — update gagal");
+    }
+
+    return db.update(
       'jenazah',
-      jenazah.toMap(),
+      data.toMap(),
       where: 'id = ?',
-      whereArgs: [jenazah.id],
+      whereArgs: [data.id],
     );
   }
 
   Future<int> deleteJenazah(int id) async {
     final db = await database;
-    return await db.delete('jenazah', where: 'id = ?', whereArgs: [id]);
+    return db.delete('jenazah', where: 'id = ?', whereArgs: [id]);
   }
 
-  // ================= CRUD KORBAN HILANG =================
-  Future<int> insertKorbanHilang(KorbanHilang korban) async {
+  // ================= KORBAN HILANG =================
+  Future<int> insertKorbanHilang(KorbanHilang data) async {
     final db = await database;
-    return await db.insert(
+
+    return db.insert(
       'korban_hilang',
-      korban.toMap(),
+      data.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<int> updateKorbanHilang(KorbanHilang korban) async {
+  Future<int> updateKorbanHilang(KorbanHilang data) async {
     final db = await database;
-    return await db.update(
+
+    if (data.id == null) {
+      throw Exception("ID korban kosong — update gagal");
+    }
+
+    return db.update(
       'korban_hilang',
-      korban.toMap(),
+      data.toMap(),
       where: 'id = ?',
-      whereArgs: [korban.id],
+      whereArgs: [data.id],
     );
   }
 
   Future<int> deleteKorbanHilang(int id) async {
     final db = await database;
-    return await db.delete(
+
+    return db.delete(
       'korban_hilang',
       where: 'id = ?',
       whereArgs: [id],
@@ -210,45 +222,44 @@ class DatabaseHelper {
 
   Future<List<KorbanHilang>> getAllKorbanHilang() async {
     final db = await database;
+
     final result = await db.query(
       'korban_hilang',
       orderBy: 'tanggal_hilang DESC',
     );
+
     return result.map((e) => KorbanHilang.fromMap(e)).toList();
   }
 
   // ================= JOIN =================
- Future<List<Map<String, dynamic>>> getJenazahWithStatus() async {
-  final db = await instance.database;
-
-  final result = await db.rawQuery('''
-    SELECT 
-      j.*,
-      COALESCE(k.status, '-') AS status,
-      COALESCE(k.kondisi, '-') AS kondisi
-    FROM jenazah j
-    LEFT JOIN korban_hilang k
-      ON k.jenazah_id = j.id
-  ''');
-
-  return result;
-}
-
-  // ================= CLEAR =================
-  Future<void> clearDatabase() async {
+  Future<List<Map<String, dynamic>>> getJenazahWithStatus() async {
     final db = await database;
 
-    await db.delete('korban_hilang');
-    await db.delete('jenazah');
-    await db.delete('users');
+    return db.rawQuery('''
+      SELECT 
+        j.*,
+        COALESCE(k.status, '-') AS status,
+        COALESCE(k.kondisi, '-') AS kondisi
+      FROM jenazah j
+      LEFT JOIN korban_hilang k
+        ON k.jenazah_id = j.id
+    ''');
+  }
 
-    // Reset autoincrement (optional tapi bersih)
-    await db.execute("DELETE FROM sqlite_sequence");
+  // ================= SAFE RESET (ADMIN ONLY) =================
+  Future<void> resetAllData() async {
+    final db = await database;
+
+    await db.transaction((txn) async {
+      await txn.delete('korban_hilang');
+      await txn.delete('jenazah');
+      await txn.execute("DELETE FROM sqlite_sequence");
+    });
   }
 
   // ================= CLOSE =================
   Future close() async {
-    final db = await instance.database;
+    final db = await database;
     db.close();
   }
 }

@@ -283,8 +283,6 @@ class _LaporanPageState extends State<LaporanPage> {
     });
 
     try {
-      // ❌ sebelumnya: getAllJenazah()
-      // ✅ revisi: ambil join jenazah + korban_hilang
       final allData = await DatabaseHelper.instance.getJenazahWithStatus();
       final filteredData = _filterDataByDate(allData);
 
@@ -302,19 +300,33 @@ class _LaporanPageState extends State<LaporanPage> {
       final excel = ex.Excel.createExcel();
       final sheet = excel['Laporan Jenazah'];
 
-      sheet.appendRow([
-        ex.TextCellValue('No'),
-        ex.TextCellValue('Nama Petugas'),
-        ex.TextCellValue('Tanggal'),
-        ex.TextCellValue('Waktu'),
-        ex.TextCellValue('Laki-laki'),
-        ex.TextCellValue('Perempuan'),
-        ex.TextCellValue('Total'),
-        ex.TextCellValue('Lokasi'),
-        ex.TextCellValue('Koordinat GPS'),
-        ex.TextCellValue('Status Korban'),   // ✅ dari korban_hilang
-        ex.TextCellValue('Kondisi Korban'),  // ✅ dari korban_hilang
-      ]);
+      final headers = [
+      'No',
+      'Nama Petugas',
+      'Tanggal',
+      'Waktu',
+      'Laki-laki',
+      'Perempuan',
+      'Total',
+      'Lokasi',
+      'Koordinat GPS',
+    ];
+
+    sheet.appendRow(headers.map((h) => ex.TextCellValue(h)).toList());
+
+      for (int col = 0; col < headers.length; col++) {
+        final cell = sheet.cell(
+          ex.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0),
+        );
+
+        cell.cellStyle = ex.CellStyle(
+          bold: true,
+          backgroundColorHex: ex.ExcelColor.fromHexString('FF7C4DFF'),
+          fontColorHex: ex.ExcelColor.fromHexString('FFFFFFFF'),
+          horizontalAlign: ex.HorizontalAlign.Center,
+          verticalAlign: ex.VerticalAlign.Center,
+        );
+      }
 
       int no = 1;
       for (var j in filteredData) {
@@ -328,8 +340,6 @@ class _LaporanPageState extends State<LaporanPage> {
           ex.IntCellValue((j['jumlah_laki'] ?? 0) + (j['jumlah_perempuan'] ?? 0)),
           ex.TextCellValue(j['lokasi_penemuan'] ?? ''),
           ex.TextCellValue(j['koordinat_gps'] ?? '-'),
-          ex.TextCellValue(j['status'] ?? '-'),   // ✅ ambil dari join korban_hilang
-          ex.TextCellValue(j['kondisi'] ?? '-'),  // ✅ ambil dari join korban_hilang
         ]);
         no++;
       }
@@ -441,7 +451,7 @@ class _LaporanPageState extends State<LaporanPage> {
               const SizedBox(height: 32),
               
               const Text(
-                'Export Data Jenazah',
+                'Export Data Korban',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -452,7 +462,7 @@ class _LaporanPageState extends State<LaporanPage> {
               const SizedBox(height: 12),
               
               Text(
-                'Pilih rentang tanggal untuk export data jenazah\nmenjadi file Excel (.xlsx)',
+                'Pilih rentang tanggal untuk export data korban\nmenjadi file Excel (.xlsx)',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -721,8 +731,7 @@ class _LaporanPageState extends State<LaporanPage> {
                           Text(
                             '• Pilih tanggal mulai wajib diisi\n'
                             '• Tanggal akhir opsional (jika tidak diisi, akan sampai hari ini)\n'
-                            '• Format nama: Cadavis_[tanggal].xlsx\n'
-                            '• Android 13+ tidak perlu izin khusus',
+                            '• Format nama: Cadavis_[tanggal].xlsx\n',
                             style: TextStyle(
                               fontSize: 12,
                               color: isDark ? Colors.white70 : Colors.black87,

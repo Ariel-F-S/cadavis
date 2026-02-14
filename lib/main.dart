@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-
 import 'pages/splash_page.dart';
 import 'pages/login_page.dart';
 import 'pages/dashboard_page.dart';
@@ -19,7 +16,7 @@ import 'pages/daftar_korban_hilang.dart';
 import 'pages/input_korban_hilang.dart';
 import 'pages/menu_korban_hilang.dart';
 import 'pages/edit_korban.dart';
-import 'pages/detail_korban_hilang.dart'; // ✅ pastikan nama file sesuai
+import 'pages/detail_korban_hilang.dart';
 
 import 'models/korban_hilang.dart';
 
@@ -27,9 +24,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
 
-  // ✅ Reset database lama (hapus cadavis.db)
-  final dbPath = await getDatabasesPath();
-  await deleteDatabase(join(dbPath, 'cadavis.db'));
+  // ❌ JANGAN ADA deleteDatabase DI SINI
+  // Database akan dibuat otomatis oleh DatabaseHelper
 
   runApp(const CadavisApp());
 }
@@ -55,7 +51,6 @@ class _CadavisAppState extends State<CadavisApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      // 🔥 PENTING UNTUK DATE PICKER
       locale: const Locale('id', 'ID'),
 
       localizationsDelegates: const [
@@ -79,14 +74,17 @@ class _CadavisAppState extends State<CadavisApp> {
 
       onGenerateRoute: (settings) {
         switch (settings.name) {
+
           case '/splash':
             return MaterialPageRoute(
               builder: (_) => SplashPage(onThemeChanged: _toggleTheme),
             );
+
           case '/login':
             return MaterialPageRoute(
               builder: (_) => LoginPage(onThemeChanged: _toggleTheme),
             );
+
           case '/dashboard':
             final args = settings.arguments as Map<String, dynamic>? ?? {};
             final role = args['role'] ?? 'pengguna';
@@ -96,37 +94,70 @@ class _CadavisAppState extends State<CadavisApp> {
                 role: role,
               ),
             );
+
           case '/input':
-            return MaterialPageRoute(builder: (_) => const InputJenazahPage());
+            return MaterialPageRoute(
+              builder: (_) => const InputJenazahPage(),
+            );
+
           case '/laporan':
-            return MaterialPageRoute(builder: (_) => const LaporanPage());
+            return MaterialPageRoute(
+              builder: (_) => const LaporanPage(),
+            );
+
           case '/statistik':
-            return MaterialPageRoute(builder: (_) => const StatistikPage());
+            return MaterialPageRoute(
+              builder: (_) => const StatistikPage(),
+            );
+
           case '/riwayat':
-            return MaterialPageRoute(builder: (_) => const RiwayatPage());
+            return MaterialPageRoute(
+              builder: (_) => const RiwayatPage(),
+            );
+
           case '/kelola':
-            return MaterialPageRoute(builder: (_) => const KelolaDataPage());
+            return MaterialPageRoute(
+              builder: (_) => const KelolaDataPage(),
+            );
+
           case '/backup':
-            return MaterialPageRoute(builder: (_) => const BackupPage());
+            return MaterialPageRoute(
+              builder: (_) => const BackupPage(),
+            );
+
           case '/hapus-data-lama':
-            return MaterialPageRoute(builder: (_) => const HapusDataLamaPage());
-          case '/korban-hilang-input': // input data korban hilang
-            return MaterialPageRoute(builder: (_) => const KorbanHilangInputPage());
-          case '/menu-korban-hilang': // menu korban hilang
-            return MaterialPageRoute(builder: (_) => const MenuKorbanHilangPage());
-          case '/daftar-korban-hilang': // daftar korban hilang
+            return MaterialPageRoute(
+              builder: (_) => const HapusDataLamaPage(),
+            );
+
+          case '/korban-hilang-input':
+            return MaterialPageRoute(
+              builder: (_) => const KorbanHilangInputPage(),
+            );
+
+          case '/menu-korban-hilang':
+            return MaterialPageRoute(
+              builder: (_) => const MenuKorbanHilangPage(),
+            );
+
+          case '/daftar-korban-hilang':
             final args = settings.arguments as Map<String, dynamic>? ?? {};
             final role = args['role'] ?? 'pengguna';
             return MaterialPageRoute(
               builder: (_) => DaftarKorbanHilangPage(role: role),
             );
-          case '/detail-korban': // detail korban hilang
+
+          case '/detail-korban':
             final args = settings.arguments as Map<String, dynamic>? ?? {};
             final korban = args['korban'];
             final role = args['role'] ?? 'pengguna';
+
             if (korban is KorbanHilang) {
               return MaterialPageRoute(
-                builder: (_) => DetailKorbanPage(korban: korban, role: role),
+                builder: (_) => DetailKorbanPage(
+                  korban: korban,
+                  role: role,
+                ),
               );
             } else {
               return MaterialPageRoute(
@@ -135,8 +166,10 @@ class _CadavisAppState extends State<CadavisApp> {
                 ),
               );
             }
-          case '/edit-korban': // edit data korban hilang
+
+          case '/edit-korban':
             final korban = settings.arguments;
+
             if (korban is KorbanHilang) {
               return MaterialPageRoute(
                 builder: (_) => EditKorbanPage(korban: korban),
