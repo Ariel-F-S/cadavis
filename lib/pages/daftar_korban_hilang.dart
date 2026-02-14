@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../db/database_helper.dart';
 import '../models/korban_hilang.dart';
+import 'detail_korban_hilang.dart';
 
 class DaftarKorbanHilangPage extends StatefulWidget {
   final String role;
