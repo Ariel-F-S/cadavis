@@ -218,27 +218,21 @@ class DatabaseHelper {
   }
 
   // ================= JOIN =================
-  Future<List<Map<String, dynamic>>> getJenazahWithStatus() async {
-    final db = await database;
+ Future<List<Map<String, dynamic>>> getJenazahWithStatus() async {
+  final db = await instance.database;
 
-    return await db.rawQuery('''
-      SELECT 
-        j.id,
-        j.nama_petugas,
-        j.tanggal_penemuan,
-        j.waktu_penemuan,
-        j.jumlah_laki,
-        j.jumlah_perempuan,
-        j.lokasi_penemuan,
-        j.koordinat_gps,
-        COALESCE(k.status, '-') AS status,
-        COALESCE(k.kondisi, j.kondisi_korban, '-') AS kondisi
-      FROM jenazah j
-      LEFT JOIN korban_hilang k
-        ON j.id = k.jenazah_id
-      ORDER BY j.tanggal_penemuan DESC
-    ''');
-  }
+  final result = await db.rawQuery('''
+    SELECT 
+      j.*,
+      COALESCE(k.status, '-') AS status,
+      COALESCE(k.kondisi, '-') AS kondisi
+    FROM jenazah j
+    LEFT JOIN korban_hilang k
+      ON k.jenazah_id = j.id
+  ''');
+
+  return result;
+}
 
   // ================= CLEAR =================
   Future<void> clearDatabase() async {
