@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/theme_helper.dart';
-import 'input_page.dart';
-import 'laporan_page.dart';
-import 'backup_page.dart';
-import 'hapus_data_lama_page.dart';
-import 'daftar_korban_hilang.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(bool) onThemeChanged;

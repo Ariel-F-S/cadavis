@@ -8,10 +8,10 @@ class DetailKorbanPage extends StatefulWidget {
   final String role;
 
   const DetailKorbanPage({
-    Key? key,
+    super.key,
     required this.korban,
     required this.role,
-  }) : super(key: key);
+  });
 
   @override
   State<DetailKorbanPage> createState() =>
